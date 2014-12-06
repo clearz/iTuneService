@@ -166,7 +166,7 @@ namespace iTuneServiceManager
 
         private void UninstallBtn_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show(this, "Are you sure you want to uninstall the iTune service?", "Uninstall Service", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            if (MessageBox.Show(this, "Are you sure you want to uninstall the iTuneServer service?", "Uninstall Service", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
                 this.Visible = false;
                 var box = new UninstallWin(this) {Owner = this, Visible = true};
@@ -188,8 +188,8 @@ namespace iTuneServiceManager
                 {
                     try
                     {
-						ServiceManager.StartService("iTune Service");
-                        InfoLbl.Text = "The iTune Service is now running";
+                        ServiceManager.StartService("iTuneServer Service");
+                        InfoLbl.Text = "The iTuneServer Service is now running";
                         openITunes.Enabled = false;
                         startBtn.Text = "Stop";
                     }
@@ -205,8 +205,8 @@ namespace iTuneServiceManager
                 {
                     try
                     {
-						ServiceManager.StopService("iTune Service");
-                        InfoLbl.Text = "The iTune Service has stopped running";
+                        ServiceManager.StopService("iTuneServer Service");
+                        InfoLbl.Text = "The iTuneServer Service has stopped running";
                         openITunes.Enabled = true;
                         startBtn.Text = "Start";
                     }

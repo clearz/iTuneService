@@ -113,7 +113,7 @@ namespace iTuneServiceManager
 		public void StartiTuneService()
 		{
 
-			ServiceManager.StartService("iTune Service");
+			ServiceManager.StartService("iTuneServer Service");
 			StartiTuneServiceTick.Visible = true;
 			SuccessLbl.Visible = true;
 		}

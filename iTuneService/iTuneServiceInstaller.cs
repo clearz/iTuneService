@@ -13,18 +13,19 @@ namespace iTuneService
     [RunInstaller(true)]
     public class iTuneServiceInstaller : Installer
     {
-        ServiceProcessInstaller serviceProcessInstaller1 = new ServiceProcessInstaller();
-        String _Parameters = "";
-        ServiceInstaller serviceInstaller1 = new ServiceInstaller();
+        ServiceProcessInstaller _serviceProcessInstaller1 = new ServiceProcessInstaller();
+        ServiceInstaller _serviceInstaller1 = new ServiceInstaller();
+        String _parameters = "";
 
         public iTuneServiceInstaller()
         {
-            this.BeforeInstall += new InstallEventHandler(ProjectInstaller_BeforeInstall);
-            this.BeforeUninstall += new InstallEventHandler(ProjectInstaller_BeforeUninstall);
+            BeforeInstall += ProjectInstaller_BeforeInstall;
+            BeforeUninstall += ProjectInstaller_BeforeUninstall;
 
-            Log.Write("iTune: Service Installed");
-            this.Installers.Add(serviceProcessInstaller1);
-            this.Installers.Add(serviceInstaller1);
+            Log.Write("iTuneService: Service Installed");
+
+            Installers.Add(_serviceProcessInstaller1);
+            Installers.Add(_serviceInstaller1);
         }
         void ProjectInstaller_BeforeInstall(object sender, InstallEventArgs e)
         {
@@ -32,23 +33,24 @@ namespace iTuneService
             {
                 Log.Write(String.Format("{0}={1}", parameter, Context.Parameters[parameter.ToString()]));
             }
-            Log.Write(this.Context.Parameters.Count.ToString());
-            // Configure Account for Service Process.
-            this.serviceProcessInstaller1.Account = System.ServiceProcess.ServiceAccount.User;
-            this.serviceProcessInstaller1.Username = this.Context.Parameters["UserName"];
-            String PassU = Decrypt(this.Context.Parameters["EncryptedPassword"], DateTime.Now.ToLongDateString());
-            this.serviceProcessInstaller1.Password = PassU;
-            _Parameters = "\"" + this.Context.Parameters["ITunesPath"]  + "\"";
-            // Configure ServiceName
-            serviceInstaller1.DisplayName = "iTune Service";
-            serviceInstaller1.StartType = ServiceStartMode.Automatic;
+            Log.Write(Context.Parameters.Count.ToString());
 
-            serviceInstaller1.ServiceName = "iTune Service";
+            // Configure Account for Service Process.
+            _serviceProcessInstaller1.Account = ServiceAccount.User;
+            _serviceProcessInstaller1.Username = Context.Parameters["UserName"];
+            String passU = Decrypt(Context.Parameters["EncryptedPassword"], DateTime.Now.ToLongDateString());
+            _serviceProcessInstaller1.Password = passU;
+            _parameters = "\"" + Context.Parameters["ITunesPath"]  + "\"";
+
+            // Configure ServiceName
+            _serviceInstaller1.DisplayName = "iTuneServer Service";
+            _serviceInstaller1.StartType = ServiceStartMode.Automatic;
+            _serviceInstaller1.ServiceName = "iTuneServer Service";
         }
 
         void ProjectInstaller_BeforeUninstall(object sender, InstallEventArgs e)
         {
-            serviceInstaller1.ServiceName = "iTune Service";
+            _serviceInstaller1.ServiceName = "iTuneServer Service";
         }
 
         public override void Install(IDictionary stateSaver)
@@ -60,7 +62,7 @@ namespace iTuneService
                 throw new Win32Exception();
             try
             {
-                IntPtr hSvc = OpenService(hScm, this.serviceInstaller1.ServiceName, SERVICE_ALL_ACCESS);
+                IntPtr hSvc = OpenService(hScm, _serviceInstaller1.ServiceName, SERVICE_ALL_ACCESS);
                 if (hSvc == IntPtr.Zero)
                     throw new Win32Exception();
                 try
@@ -82,7 +84,7 @@ namespace iTuneService
                         Marshal.FreeHGlobal(ptr);
                     }
 
-                    string newBinaryPathAndParameters = oldConfig.lpBinaryPathName + " " + _Parameters;
+                    string newBinaryPathAndParameters = oldConfig.lpBinaryPathName + " " + _parameters;
 
                     if (!ChangeServiceConfig(hSvc, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE,
                         newBinaryPathAndParameters, null, IntPtr.Zero, null, null, null, null))

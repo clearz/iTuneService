@@ -71,7 +71,7 @@
             this.InstalliTuneServiceLbl.Name = "InstalliTuneServiceLbl";
             this.InstalliTuneServiceLbl.Size = new System.Drawing.Size(173, 17);
             this.InstalliTuneServiceLbl.TabIndex = 2;
-            this.InstalliTuneServiceLbl.Text = "●  Installing iTune Service";
+            this.InstalliTuneServiceLbl.Text = "●  Installing iTuneServer Service";
             // 
             // StartiTuneServiceLbl
             // 
@@ -82,7 +82,7 @@
             this.StartiTuneServiceLbl.Name = "StartiTuneServiceLbl";
             this.StartiTuneServiceLbl.Size = new System.Drawing.Size(166, 17);
             this.StartiTuneServiceLbl.TabIndex = 3;
-            this.StartiTuneServiceLbl.Text = "●  Starting iTune Service";
+            this.StartiTuneServiceLbl.Text = "●  Starting iTuneServer Service";
             // 
             // ValidateUserCredentialsTick
             // 

@@ -13,12 +13,11 @@ namespace iTuneService
         static void Main(String[] args)
         {
             Log.Write("Args.Length: " + args.Length);
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[] 
-			{ 
-				new iTuneService(args[0]) 
-			};
-            ServiceBase.Run(ServicesToRun);
+            var servicesToRun = new ServiceBase[] 
+            { 
+                new iTuneService(args[0]) 
+            };
+            ServiceBase.Run(servicesToRun);
         }
     }
 }

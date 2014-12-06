@@ -15,18 +15,18 @@ namespace iTuneServiceManager
         static Label(){
 			_messages = new Dictionary<string, string>
 			{
-				{"install", "Installs and starts the iTune Windows Service."},
-				{"uninstall", "Uninstalls the iTune Windows Service (Not this manager app)"},
-				{"start", "Start the iTune, Windows Service."},
-				{"stop", "Stop the iTune, Windows Service."},
+				{"install", "Installs and starts the iTuneServer Windows Service."},
+				{"uninstall", "Uninstalls the iTuneServer Windows Service (Not this manager app)"},
+				{"start", "Start the iTuneServer, Windows Service."},
+				{"stop", "Stop the iTuneServer, Windows Service."},
 				{"computer", "The name of the computer on the local network."},
 				{"user", "Choose the account that has access to the music you want to be able to play."},
 				{"pass", "The password for the Windows account selected above."},
 				{"rpass", "Retype the password to confirm it."},
 				{"vpass", "The password has been provisionally confirmed."},
-				{"select", "Select the iTunes executable file."},
-				{"default", "ITunes Windows Service manager. By John Cleary."},
-				{"open", "Run the iTunes Application (Only if service is stopped or not installed)"}
+				{"select", "Select the iTuneServer executable file."},
+				{"default", "iTuneServer Windows Service manager - github.com/clearz/iTuneService"},
+				{"open", "Run the iTuneServer Application (Only if service is stopped or not installed)"}
 			};
         }
     }

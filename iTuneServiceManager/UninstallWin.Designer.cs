@@ -45,7 +45,7 @@
             this.UninstalliTuneServiceLbl.Name = "UninstalliTuneServiceLbl";
             this.UninstalliTuneServiceLbl.Size = new System.Drawing.Size(189, 17);
             this.UninstalliTuneServiceLbl.TabIndex = 2;
-            this.UninstalliTuneServiceLbl.Text = "●  Uninstalling iTune Service";
+            this.UninstalliTuneServiceLbl.Text = "●  Uninstalling iTuneServer Service";
             // 
             // StoppingiTuneServiceLbl
             // 
@@ -56,7 +56,7 @@
             this.StoppingiTuneServiceLbl.Name = "StoppingiTuneServiceLbl";
             this.StoppingiTuneServiceLbl.Size = new System.Drawing.Size(175, 17);
             this.StoppingiTuneServiceLbl.TabIndex = 3;
-            this.StoppingiTuneServiceLbl.Text = "●  Stopping iTune Service";
+            this.StoppingiTuneServiceLbl.Text = "●  Stopping iTuneServer Service";
             // 
             // UninstalliTuneServiceTick
             // 

@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("iTuneService")]
 [assembly: AssemblyDescription("Allows iTunes to run as a windows service")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Clearz DeV")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("iTuneService")]
-[assembly: AssemblyCopyright("Copyright © John Cleary 2010")]
+[assembly: AssemblyCopyright("Copyright © 2010-2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

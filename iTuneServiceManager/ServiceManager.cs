@@ -22,7 +22,7 @@ namespace iTuneServiceManager
         {
 	        get
 	        {
-		        return ServiceController.GetServices().Any(controller => controller.ServiceName == "iTune Service"); 
+                return ServiceController.GetServices().Any(controller => controller.ServiceName == "iTuneServer Service"); 
 	        }
         }
 
@@ -30,7 +30,7 @@ namespace iTuneServiceManager
         {
             get
             {
-	            foreach (ServiceController controller in ServiceController.GetServices().Where(controller => controller.ServiceName == "iTune Service"))
+                foreach (ServiceController controller in ServiceController.GetServices().Where(controller => controller.ServiceName == "iTuneServer Service"))
 					return controller.Status;
 	            
 	            return ServiceControllerStatus.Stopped;
@@ -72,7 +72,7 @@ namespace iTuneServiceManager
             try
             {
                 string str = "Win32_Service.Name='";
-                var obj2 = new ManagementObject(str + "iTune Service" + "'");
+                var obj2 = new ManagementObject(str + "iTuneServer Service" + "'");
                 var args = new object[11];
                 args[6] = username;
                 args[7] = password;
@@ -101,7 +101,7 @@ namespace iTuneServiceManager
 
         public static bool RestartService()
         {
-            return RestartService("iTune Service");
+            return RestartService("iTuneServer Service");
         }
 
         public static bool RestartService(string strServiceName)
@@ -115,7 +115,7 @@ namespace iTuneServiceManager
 
         public static bool StartService()
         {
-            return StartService("iTune Service");
+            return StartService("iTuneServer Service");
         }
 
         public static bool StartService(string strServiceName)
@@ -150,7 +150,7 @@ namespace iTuneServiceManager
 
         public static bool StopService()
         {
-            return StopService("iTune Service");
+            return StopService("iTuneServer Service");
         }
 
         public static bool StopService(string strServiceName)
@@ -197,7 +197,7 @@ namespace iTuneServiceManager
                 {
                     oK =
                         MessageBox.Show("Please ensure that any Services Console windows are closed before continuing.\r\n\r\nPress 'OK' when ready.",
-							"iTune Service", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
+							"iTuneServer Service", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
                 }
                 if (oK == DialogResult.OK)
                 {
@@ -214,7 +214,7 @@ namespace iTuneServiceManager
                         if (location == "")
                         {
                             MessageBox.Show("This product has not been installed correctly.  Uninstall cannot complete.",
-                                "iTune Service", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                                "iTuneServer Service", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                         }
                         else
                         {

@@ -16,8 +16,8 @@ namespace iTuneService
         {
             FileName = fn;
 
-            this.ServiceName = "iTune Service";
-            this.EventLog.Source = "iTune Service";
+            this.ServiceName = "iTuneServer Service";
+            this.EventLog.Source = "iTuneServer Service";
             this.EventLog.Log = "Application";
 
             this.CanHandlePowerEvent = true;
@@ -26,8 +26,8 @@ namespace iTuneService
             this.CanShutdown = true;
             this.CanStop = true;
 
-            if (!EventLog.SourceExists("iTune Service"))
-                EventLog.CreateEventSource("iTune Service", "Application");
+            if (!EventLog.SourceExists("iTuneServer Service"))
+                EventLog.CreateEventSource("iTuneServer Service", "Application");
         }
 
         protected override void OnStart(string[] args)
@@ -35,27 +35,27 @@ namespace iTuneService
             p = new Process();
             p.StartInfo.FileName = FileName;
             p.Start();
-            Log.Write("iTune: Service Starting");
+            Log.Write("iTuneServer: Service Starting");
             Log.Write("Starting Process: " + FileName);
             Thread.Sleep(50);
             if (!p.HasExited)
             {
                 Log.Write("Process: '" + FileName + "' has started with a pid of " + p.Id.ToString());
-                Log.Write("iTune: Service Started");
+                Log.Write("iTuneServer: Service Started");
             }
             base.OnStart(args);
         }
 
         protected override void OnStop()
         {
-            Log.Write("iTune: Service Stopping");
+            Log.Write("iTuneServer: Service Stopping");
             Log.Write("Shutting down Process: '" + FileName + "', PID: " + p.Id.ToString());
             p.Kill();
             Thread.Sleep(50);
             if (p.HasExited)
             {
                 Log.Write("Process: '" + FileName + "' has exited");
-                Log.Write("iTune: Service Stopped");
+                Log.Write("iTuneServer: Service Stopped");
             }
 
             base.OnStop();

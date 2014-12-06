@@ -225,7 +225,7 @@
             this.InfoLbl.Name = "InfoLbl";
             this.InfoLbl.Size = new System.Drawing.Size(309, 16);
             this.InfoLbl.TabIndex = 16;
-            this.InfoLbl.Text = "ITunes Windows Service manager. By John Cleary";
+            this.InfoLbl.Text = "iTuneServer Windows Service manager - github.com/clearz/iTuneService";
             // 
             // openITunes
             // 
@@ -269,7 +269,7 @@
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "iTune Service Installer";
+            this.Text = "iTuneServer Service Installer";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);

@@ -73,7 +73,7 @@ namespace iTuneServiceManager
         {
 			if ( ServiceManager.ServiceStatus == ServiceControllerStatus.Running )
 			{
-				ServiceManager.StopService("iTune Service");
+				ServiceManager.StopService("iTuneServer Service");
                 _form.startBtn.Enabled = true;
             }
             StoppingiTuneServiceTick.Visible = true;
