@@ -157,7 +157,7 @@ namespace iTuneServiceManager
             {
                 installBtn.Enabled = iTunesExeFound && iTunesPathBox.Text != "";
                 pictureBox1.Visible = iTunesExeFound && iTunesPathBox.Text != "";
-                InfoLbl.Text = Label.Get["vpass"];
+                InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_VPASS;
             }
             else
                 pictureBox1.Visible = installBtn.Enabled = false;
@@ -228,57 +228,59 @@ namespace iTuneServiceManager
 
         private void selectITunesExeBtn_MouseEnter(object sender, EventArgs e)
         {
-            InfoLbl.Text = Label.Get["select"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_SELECT;
         }
 
         private void ITunes_MouseLeave(object sender, EventArgs e)
         {
-            InfoLbl.Text = Label.Get["default"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_DEFAULT;
         }
 
         private void computerNameBox_MouseEnter(object sender, EventArgs e)
 		{
-            InfoLbl.Text = Label.Get["computer"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_COMPUTER;
         }
 
         private void comboBox1_MouseEnter(object sender, EventArgs e)
         {
-            InfoLbl.Text = Label.Get["user"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_USER;
         }
 
         private void passwordBox1_MouseEnter(object sender, EventArgs e)
         {
-            InfoLbl.Text = Label.Get["pass"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_PASS;
         }
 
         private void passwordBox2_MouseEnter(object sender, EventArgs e)
 		{
-            InfoLbl.Text = Label.Get["rpass"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_RPASS;
         }
 
         private void installBtn_MouseEnter(object sender, EventArgs e)
         {
-            InfoLbl.Text = Label.Get["install"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_INSTALL;
         }
 
         private void UninstallBtn_MouseEnter(object sender, EventArgs e)
         {
-            InfoLbl.Text = Label.Get["uninstall"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_UNINSTALL;
         }
 
         private void startBtn_MouseEnter(object sender, EventArgs e)
         {
-            InfoLbl.Text = startBtn.Text == "Start" ? Label.Get["start"] : Label.Get["stop"];
+            InfoLbl.Text = startBtn.Text == "Start"
+                               ? Localization.MainFormStrings.INFO_LABEL_START
+                               : Localization.MainFormStrings.INFO_LABEL_STOP;
         }
 
         private void stopBtn_MouseEnter(object sender, EventArgs e)
         {
-            InfoLbl.Text = Label.Get["stop"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_STOP;
         }
 
         private void openITunes_MouseEnter(object sender, EventArgs e)
         {
-            InfoLbl.Text = Label.Get["open"];
+            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_OPEN;
         }
 
         private void openITunes_Click(object sender, EventArgs e)
