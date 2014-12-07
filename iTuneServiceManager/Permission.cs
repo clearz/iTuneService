@@ -20,9 +20,9 @@ namespace iTuneServiceManager
         [DllImport("advapi32.dll")]
         private static extern long Close(IntPtr ObjectHandle);
         [DllImport("advapi32.dll")]
-        private static extern long NTStatusToWinError(long status);
+        private static extern long LsaNtStatusToWinError(long status);
         [DllImport("advapi32.dll")]
-        private static extern uint OpenPolicy(ref PermisionString SystemName, ref PermissionAttributes ObjectAttributes, int DesiredAccess, out IntPtr PolicyHandle);
+        private static extern uint LsaOpenPolicy(ref PermisionString SystemName, ref PermissionAttributes ObjectAttributes, int DesiredAccess, out IntPtr PolicyHandle);
 		#endregion
 
 	    #region Fields
@@ -77,7 +77,7 @@ namespace iTuneServiceManager
                 SecurityDescriptor = IntPtr.Zero,
                 SecurityQualityOfService = IntPtr.Zero
             };
-            lastError = NTStatusToWinError((long)OpenPolicy(ref _systemName, ref objectAttributes, DESIRED_ACCESS, out _policyHandle));
+            lastError = LsaNtStatusToWinError((long)LsaOpenPolicy(ref _systemName, ref objectAttributes, DESIRED_ACCESS, out _policyHandle));
             if (lastError != 0L)
             {
                 Console.WriteLine("OpenPolicy failed: " + lastError);
@@ -88,7 +88,7 @@ namespace iTuneServiceManager
                 userRights[0].Buffer = Marshal.StringToHGlobalUni(privilegeName);
                 userRights[0].Length = (ushort)(privilegeName.Length * 2);
                 userRights[0].MaximumLength = (ushort)((privilegeName.Length + 1) * 2);
-                lastError = NTStatusToWinError(AddAccountRights(_policyHandle, zero, userRights, 1L));
+                lastError = LsaNtStatusToWinError(AddAccountRights(_policyHandle, zero, userRights, 1L));
                 if (lastError != 0L)
                 {
                     Console.WriteLine("AddAccountRights failed: " + lastError);

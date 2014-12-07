@@ -16,15 +16,15 @@ namespace iTuneService
         {
             FileName = fn;
 
-            this.ServiceName = "iTuneServer Service";
-            this.EventLog.Source = "iTuneServer Service";
-            this.EventLog.Log = "Application";
+            ServiceName = "iTuneServer Service";
+            EventLog.Source = "iTuneServer Service";
+            EventLog.Log = "Application";
 
-            this.CanHandlePowerEvent = true;
-            this.CanHandleSessionChangeEvent = true;
-            this.CanPauseAndContinue = true;
-            this.CanShutdown = true;
-            this.CanStop = true;
+            CanHandlePowerEvent = true;
+            CanHandleSessionChangeEvent = true;
+            CanPauseAndContinue = true;
+            CanShutdown = true;
+            CanStop = true;
 
             if (!EventLog.SourceExists("iTuneServer Service"))
                 EventLog.CreateEventSource("iTuneServer Service", "Application");
