@@ -124,7 +124,7 @@ namespace iTuneServiceManager
         private void installBtn_Click(object sender, EventArgs e)
         {
             this.Visible = false;
-            var box = new InstallWin() {Visible = true, Owner = this};
+            var box = new InstallWin(this) {Visible = true, Owner = this};
             IntPtr hmenu = Win32.GetSystemMenu(box.Handle, 0);
             int cnt = Win32.GetMenuItemCount(hmenu);
 
@@ -188,7 +188,7 @@ namespace iTuneServiceManager
                 {
                     try
                     {
-                        ServiceManager.StartService("iTuneServer Service");
+                        ServiceManager.StartService(ServiceManager.ServiceName);
                         InfoLbl.Text = "The iTuneServer Service is now running";
                         openITunes.Enabled = false;
                         startBtn.Text = "Stop";
@@ -205,7 +205,7 @@ namespace iTuneServiceManager
                 {
                     try
                     {
-                        ServiceManager.StopService("iTuneServer Service");
+                        ServiceManager.StopService(ServiceManager.ServiceName);
                         InfoLbl.Text = "The iTuneServer Service has stopped running";
                         openITunes.Enabled = true;
                         startBtn.Text = "Start";

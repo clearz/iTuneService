@@ -14,37 +14,42 @@ namespace iTuneServiceManager
 	public partial class InstallWin : Form
 	{
 		private readonly Logger _logger = Logger.GetLogger(writeToConsole: true);
-		
+
+	    private MainForm _mainForm;
+
 		public void Invoke(InstallWin i, Action method)
 		{
-			if (i.InvokeRequired)
-			{
-				i.Invoke((Action) (() =>
-				{
-					try
-					{
-						method();
-					}
-					catch (Exception e)
-					{
-						_logger.Log(e);
-						ShowError("Error @ " + method.GetType().Name);
-					}
-				}));
-			}
-			else method();
+		    Action toInvoke =
+		        () =>
+		        {
+		            try
+		            {
+		                method();
+		            }
+		            catch (Exception e)
+		            {
+		                _logger.Log(e);
+		                ShowError("Error @ " + method.GetType().Name);
+		            }
+		        };
+
+		    if (i.InvokeRequired)
+		        i.Invoke(toInvoke);
+		    else
+		        toInvoke();
 		}
 
-		public InstallWin()
+        public InstallWin(MainForm mainForm)
 		{
 			InitializeComponent();
+            _mainForm = mainForm;
 			new Thread(Install).Start();
 		}
 
 		public void ShowError(String err)
 		{
 			MessageBox.Show(this, err, "Error Installing Service", MessageBoxButtons.OK, MessageBoxIcon.Error);
-			Closed += (sender, args) => { Thread.Sleep(10); Owner.Visible = true; }; 
+            Closed += (sender, args) => { Thread.Sleep(10); _mainForm.Visible = true; }; 
 			Close();
 		}
 
@@ -52,82 +57,85 @@ namespace iTuneServiceManager
 		public void Install()
 		{
 			Invoke(this, ValidateUserCredentials);
-			Thread.Sleep(1000);
+            Thread.Sleep(1000);
 			Invoke(this, GiveUserLoginAsServicePermission); 
-			Thread.Sleep(1000);
+            Thread.Sleep(1000);
 			Invoke(this, InstalliTuneService); 
-			Thread.Sleep(1000);
+            Thread.Sleep(1000);
 			Invoke(this, StartiTuneService); 
-			Thread.Sleep(2000);
-			Invoke(this, Hide);
-		}
+            Thread.Sleep(2000);
+            Invoke(this, Hide);           
+        }
 
 		public void ValidateUserCredentials()
 		{
-			var form = ( (MainForm)Owner );
-			_logger.Log("ValidateUserCredentials" + form.computerNameBox.Text);
-			bool isValid = ServiceManager.AuthenticateUser(form.usernameBox.Text, form.passwordBox1.Text);
+            _logger.Log("ValidateUserCredentials" + _mainForm.computerNameBox.Text);
+
+            var isValid = ServiceManager.AuthenticateUser(_mainForm.usernameBox.Text, _mainForm.passwordBox1.Text);
 			if ( !isValid )
 			{
-				_logger.Log("Throwing IOException: The given password does not match the user " + form.usernameBox.Text);
-				throw new IOException("The given password does not match the user " + form.usernameBox.Text);
+                _logger.Log("Throwing IOException: The given password does not match the user " + _mainForm.usernameBox.Text);
+                throw new IOException("The given password does not match the user " + _mainForm.usernameBox.Text);
 			}
 
-			_logger.Log("User Validated" + form.computerNameBox.Text);
+            _logger.Log("User Validated" + _mainForm.computerNameBox.Text);
 			ValidateUserCredentialsTick.Visible = true;
 		}
 
 		public void GiveUserLoginAsServicePermission()
 		{
-			var form = ( (MainForm)Owner );
 			try
 			{
-				Permission.SetRight(form.usernameBox.Text, "SeServiceLogonRight");
+                Permission.SetRight(_mainForm.usernameBox.Text, "SeServiceLogonRight");
 			}
 			catch ( Exception exception )
 			{
-				_logger.Log("Could not set right SeServiceLogonRight to " + form.iTunesPathBox.Text + ": " + exception);
+                _logger.Log("Could not set right SeServiceLogonRight to " + _mainForm.iTunesPathBox.Text + ": " + exception);
 			}
 			GiveUserLoginAsServicePermissionTick.Visible = true;
 		}
 
 		public void InstalliTuneService()
 		{
-			var form = ( (MainForm)Owner );
-			_logger.Log("InstallWin.InstalliTuneService() Enter");
-			_logger.Log("/ITunesPath=" + form.iTunesPathBox.Text);
-			_logger.Log("/UserName=" + form.computerNameBox.Text + @"\" + form.usernameBox.Text);
-			_logger.Log("/EncryptedPassword=" + Encryption.Encrypt(form.passwordBox1.Text, DateTime.Now.ToLongDateString()));
-			var strz = new[]
-                           {
-                               "/ITunesPath=" + form.iTunesPathBox.Text,
-                               "/UserName=" + form.computerNameBox.Text + @"\" + form.usernameBox.Text,
-                               "/EncryptedPassword=" + Encryption.Encrypt(form.passwordBox1.Text, DateTime.Now.ToLongDateString()),
-                               "./iTuneService.exe"
-                           };
-			ServiceManager.Install(strz);
-			InstalliTuneServiceTick.Visible = true;
+            var iTunesPath = "/ITunesPath=" + _mainForm.iTunesPathBox.Text;
+            var userName = "/UserName=" + _mainForm.computerNameBox.Text + @"\" + _mainForm.usernameBox.Text;
 
+            // Encrypt password for transfer using today's date as a long string for the password
+            var password = "/EncryptedPassword=" + Encryption.Encrypt(_mainForm.passwordBox1.Text, DateTime.Now.ToLongDateString());
+
+            _logger.Log("InstallWin.InstalliTuneService() Enter");
+		    _logger.Log(iTunesPath);
+		    _logger.Log(userName);
+		    _logger.Log(password);
+		    
+            var installArgs = new[]
+		    {
+		        iTunesPath,
+		        userName,
+		        password,
+		        "./iTuneService.exe"
+		    };
+			ServiceManager.Install(installArgs);
+			
+            InstalliTuneServiceTick.Visible = true;
 		}
 
 		public void StartiTuneService()
 		{
-
-			ServiceManager.StartService("iTuneServer Service");
+			ServiceManager.StartService(ServiceManager.ServiceName);
 			StartiTuneServiceTick.Visible = true;
 			SuccessLbl.Visible = true;
 		}
 
-		public void Hide()
+		public new void Hide()
 		{
-			var form = ( (MainForm)Owner );
-			form.pictureBox1.Visible = form.passwordBox1.Enabled = form.passwordBox2.Enabled = form.usernameBox.Enabled = form.selectITunesExeBtn.Enabled = form.installBtn.Enabled = false;
-			form.UninstallBtn.Enabled = true;
-			form.startBtn.Enabled = true;
-			form.startBtn.Text = "Stop";
-			form.openITunes.Enabled = false;
+			_mainForm.pictureBox1.Visible = _mainForm.passwordBox1.Enabled = _mainForm.passwordBox2.Enabled = _mainForm.usernameBox.Enabled = _mainForm.selectITunesExeBtn.Enabled = _mainForm.installBtn.Enabled = false;
+			_mainForm.UninstallBtn.Enabled = true;
+			_mainForm.startBtn.Enabled = true;
+			_mainForm.startBtn.Text = "Stop";
+			_mainForm.openITunes.Enabled = false;
 
-			Closed += (sender, args) => { form.Visible = true; };
+			Closed += (sender, args) => { _mainForm.Visible = true; };
 			Close();
 		}
 	}

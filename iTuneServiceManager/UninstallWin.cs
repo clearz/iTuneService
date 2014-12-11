@@ -21,33 +21,38 @@ namespace iTuneServiceManager
     public partial class UninstallWin : Form
     {
 		private readonly Logger _logger = Logger.GetLogger(writeToConsole: true);
-	    private readonly MainForm _form;
+	    private readonly MainForm _mainForm;
+
 		public void Invoke(UninstallWin i, Action method)
 		{
-			if ( i.InvokeRequired )
-			{
-				i.Invoke((Action)( () => {
-					try
-					{
-						method();
-					}
-					catch ( Exception e )
-					{
-						_logger.Log(e);
-						ShowError("Error @ " + method.GetType().Name);
-					}
-				} ));
-			}
-			else method();
-		}
+            Action toInvoke =
+                () =>
+                {
+                    try
+                    {
+                        method();
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.Log(e);
+                        ShowError("Error @ " + method.GetType().Name);
+                    }
+                };
 
-        public UninstallWin(MainForm form)
-        {
-            this._form = form;
-            InitializeComponent();
-            new Thread(run).Start();
+            if (i.InvokeRequired)
+                i.Invoke(toInvoke);
+            else
+                toInvoke();
         }
-        public void run()
+
+        public UninstallWin(MainForm mainForm)
+        {
+            _mainForm = mainForm;
+            InitializeComponent();
+            new Thread(Uninstall).Start();
+        }
+
+        public void Uninstall()
         {
             Thread.Sleep(1000);
             Invoke(this, StopiTuneService);
@@ -56,12 +61,14 @@ namespace iTuneServiceManager
             Thread.Sleep(1600);
 			Invoke(this, Hide);
         }
+
         public void ShowError(string err)
         {
             MessageBox.Show(this, err, "Error Uninstalling Service", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            this.Visible = false;
-            _form.Visible = true;
+            Visible = false;
+            _mainForm.Visible = true;
         }
+
         public void UninstalliTuneService()
         {
             ServiceManager.Uninstall();
@@ -71,26 +78,25 @@ namespace iTuneServiceManager
 
         public void StopiTuneService()
         {
-			if ( ServiceManager.ServiceStatus == ServiceControllerStatus.Running )
-			{
-				ServiceManager.StopService("iTuneServer Service");
-                _form.startBtn.Enabled = true;
+            if (ServiceManager.ServiceStatus == ServiceControllerStatus.Running)
+            {
+                ServiceManager.StopService(ServiceManager.ServiceName);
+                _mainForm.startBtn.Enabled = true;
             }
+
             StoppingiTuneServiceTick.Visible = true;
         }
 
         public new void Hide()
         {
-            _form.pictureBox1.Visible = false;
-            _form.passwordBox1.Enabled = _form.passwordBox2.Enabled = _form.usernameBox.Enabled = _form.selectITunesExeBtn.Enabled = true;
-            _form.installBtn.Enabled = _form.ITunesExeFound && _form.PasswordsMatching;
-            _form.UninstallBtn.Enabled = false;
-            _form.startBtn.Enabled = false;
-            _form.openITunes.Enabled = true;
-			Closed += (sender, args) => { _form.Visible = true; };
+            _mainForm.pictureBox1.Visible = false;
+            _mainForm.passwordBox1.Enabled = _mainForm.passwordBox2.Enabled = _mainForm.usernameBox.Enabled = _mainForm.selectITunesExeBtn.Enabled = true;
+            _mainForm.installBtn.Enabled = _mainForm.ITunesExeFound && _mainForm.PasswordsMatching;
+            _mainForm.UninstallBtn.Enabled = false;
+            _mainForm.startBtn.Enabled = false;
+            _mainForm.openITunes.Enabled = true;
+			Closed += (sender, args) => { _mainForm.Visible = true; };
 			Close();
         }
-
-
     }
 }

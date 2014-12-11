@@ -16,24 +16,16 @@ namespace iTuneServiceManager
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern bool LookupAccountName(string lpSystemName, string lpAccountName, IntPtr psid, ref int cbsid, StringBuilder domainName, ref int cbdomainLength, ref int use);
         [DllImport("advapi32.dll", SetLastError = true)]
-        private static extern long AddAccountRights(IntPtr PolicyHandle, IntPtr AccountSid, PermisionString[] UserRights, long CountOfRights);
+        private static extern long AddAccountRights(IntPtr policyHandle, IntPtr accountSid, PermisionString[] userRights, long countOfRights);
         [DllImport("advapi32.dll")]
-        private static extern long Close(IntPtr ObjectHandle);
+        private static extern long Close(IntPtr objectHandle);
         [DllImport("advapi32.dll")]
         private static extern long LsaNtStatusToWinError(long status);
         [DllImport("advapi32.dll")]
-        private static extern uint LsaOpenPolicy(ref PermisionString SystemName, ref PermissionAttributes ObjectAttributes, int DesiredAccess, out IntPtr PolicyHandle);
+        private static extern uint LsaOpenPolicy(ref PermisionString systemName, ref PermissionAttributes objectAttributes, int desiredAccess, out IntPtr policyHandle);
 		#endregion
 
-	    #region Fields
-
-	    private static PermisionString _systemName;
-	    private const int DESIRED_ACCESS = 0x1fff;
-		private static IntPtr _policyHandle = IntPtr.Zero;
-
-	    #endregion
-
-		#region Structs
+        #region Structs
 		private struct PermissionAttributes
 		{
 			public int Length;
@@ -52,55 +44,73 @@ namespace iTuneServiceManager
 		}
 		#endregion
 
-		public static long SetRight(string accountName, string privilegeName)
+        private const int DESIRED_ACCESS = 0x1fff;
+
+        public static long SetRight(string accountName, string privilegeName)
         {
-            long lastError = 0L;
-            IntPtr zero = IntPtr.Zero;
-            int cbsid = 0;
+            var lastError = 0L;
+            var sid = IntPtr.Zero;
+            var cbsid = 0;
             var domainName = new StringBuilder();
-            int cbdomainLength = 0;
-            int use = 0;
-            LookupAccountName(string.Empty, accountName, zero, ref cbsid, domainName, ref cbdomainLength, ref use);
-            domainName = new StringBuilder(cbdomainLength);
-            zero = Marshal.AllocHGlobal(cbsid);
-            bool flag = LookupAccountName(string.Empty, accountName, zero, ref cbsid, domainName, ref cbdomainLength, ref use);
-            if (!flag)
-            {
-                lastError = GetLastError();
-                return lastError;
-            }
-            var objectAttributes = new PermissionAttributes
-            {
-                Length = 0,
-                RootDirectory = IntPtr.Zero,
-                Attributes = 0,
-                SecurityDescriptor = IntPtr.Zero,
-                SecurityQualityOfService = IntPtr.Zero
-            };
-            lastError = LsaNtStatusToWinError((long)LsaOpenPolicy(ref _systemName, ref objectAttributes, DESIRED_ACCESS, out _policyHandle));
-            if (lastError != 0L)
-            {
-                Console.WriteLine("OpenPolicy failed: " + lastError);
-            }
-            else
-            {
-                var userRights = new [] { new PermisionString() };
-                userRights[0].Buffer = Marshal.StringToHGlobalUni(privilegeName);
-                userRights[0].Length = (ushort)(privilegeName.Length * 2);
-                userRights[0].MaximumLength = (ushort)((privilegeName.Length + 1) * 2);
-                lastError = LsaNtStatusToWinError(AddAccountRights(_policyHandle, zero, userRights, 1L));
-                if (lastError != 0L)
-                {
-                    Console.WriteLine("AddAccountRights failed: " + lastError);
-                }
-                Close(_policyHandle);
-            }
-            FreeSid(zero);
-            return lastError;
+            var cbdomainLength = 0;
+            var use = 0;
+	        var systemName = default (PermisionString);
+		    var policyHandle = IntPtr.Zero;
+            var permission = default(PermisionString);
+
+		    try
+		    {
+		        LookupAccountName(string.Empty, accountName, IntPtr.Zero, ref cbsid, domainName, ref cbdomainLength, ref use);
+		        domainName = new StringBuilder(cbdomainLength);
+		        sid = Marshal.AllocHGlobal(cbsid);
+
+		        var flag = LookupAccountName(string.Empty, accountName, sid, ref cbsid, domainName, ref cbdomainLength, ref use);
+		        if (!flag)
+		        {
+		            lastError = GetLastError();
+		            return lastError;
+		        }
+
+		        var objectAttributes = new PermissionAttributes
+		        {
+		            Length = 0,
+		            RootDirectory = IntPtr.Zero,
+		            Attributes = 0,
+		            SecurityDescriptor = IntPtr.Zero,
+		            SecurityQualityOfService = IntPtr.Zero
+		        };
+
+		        lastError = LsaNtStatusToWinError(LsaOpenPolicy(ref systemName, ref objectAttributes, DESIRED_ACCESS, out policyHandle));                
+		        if (lastError != 0L)
+		        {
+		            Console.WriteLine("OpenPolicy failed: " + lastError);
+		            return lastError;
+		        }
+		        
+		        permission = new PermisionString
+		        {
+		            Buffer = Marshal.StringToHGlobalUni(privilegeName),
+		            Length = (ushort)(privilegeName.Length * 2),
+		            MaximumLength = (ushort)((privilegeName.Length + 1) * 2)
+		        };
+
+		        var userRights = new[] {permission};
+
+		        lastError = LsaNtStatusToWinError(AddAccountRights(policyHandle, sid, userRights, 1L));
+		        if (lastError != 0L)
+		        {
+		            Console.WriteLine("AddAccountRights failed: " + lastError);
+		        }
+
+		        return lastError;
+		    }
+		    finally
+		    {
+		        if (systemName.Buffer != IntPtr.Zero) Marshal.FreeHGlobal(systemName.Buffer);
+		        if (policyHandle != IntPtr.Zero) Close(policyHandle);
+		        if (permission.Buffer != IntPtr.Zero) Marshal.FreeHGlobal(systemName.Buffer);
+		        if (sid != IntPtr.Zero) FreeSid(sid);
+		    }
         }
-
-
     }
-
-
 }

@@ -15,12 +15,15 @@ namespace iTuneServiceManager
 			private static readonly string _fileName = Assembly.GetEntryAssembly().GetName().Name + ".log";
 			private static readonly FileMode _mode = FileMode.Append;
 			private const string LINE_FORMAT = "{0,-7}{1}: Line: {3,-2}, Member = {4}, Msg = '{2}'";
-			public static Logger Instance { get; set; }
+			
+            public static Logger Instance { get; set; }
+
 			public static Logger GetLogger(bool writeToConsole)
 			{
 				Instance.WriteToConsole = writeToConsole;
 				return Instance;
 			}
+
 			public bool WriteToConsole { get; set; }
 
 			public void Write(string s)

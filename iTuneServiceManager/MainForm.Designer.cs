@@ -105,7 +105,7 @@
             this.installBtn.Name = "installBtn";
             this.installBtn.Size = new System.Drawing.Size(121, 23);
             this.installBtn.TabIndex = 5;
-            this.installBtn.Text = "InstallWin";
+            this.installBtn.Text = "Install Service";
             this.installBtn.UseVisualStyleBackColor = true;
             this.installBtn.Click += new System.EventHandler(this.installBtn_Click);
             this.installBtn.MouseEnter += new System.EventHandler(this.installBtn_MouseEnter);
@@ -176,7 +176,7 @@
             this.UninstallBtn.Name = "UninstallBtn";
             this.UninstallBtn.Size = new System.Drawing.Size(121, 23);
             this.UninstallBtn.TabIndex = 6;
-            this.UninstallBtn.Text = "UninstallWin";
+            this.UninstallBtn.Text = "Uninstall Service";
             this.UninstallBtn.UseVisualStyleBackColor = true;
             this.UninstallBtn.Click += new System.EventHandler(this.UninstallBtn_Click);
             this.UninstallBtn.MouseEnter += new System.EventHandler(this.UninstallBtn_MouseEnter);
@@ -223,7 +223,7 @@
             this.InfoLbl.ForeColor = System.Drawing.SystemColors.Highlight;
             this.InfoLbl.Location = new System.Drawing.Point(40, 209);
             this.InfoLbl.Name = "InfoLbl";
-            this.InfoLbl.Size = new System.Drawing.Size(309, 16);
+            this.InfoLbl.Size = new System.Drawing.Size(445, 16);
             this.InfoLbl.TabIndex = 16;
             this.InfoLbl.Text = "iTuneServer Windows Service manager - github.com/clearz/iTuneService";
             // 

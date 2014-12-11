@@ -13,8 +13,8 @@ namespace iTuneService
     [RunInstaller(true)]
     public class iTuneServiceInstaller : Installer
     {
-        ServiceProcessInstaller _serviceProcessInstaller1 = new ServiceProcessInstaller();
-        ServiceInstaller _serviceInstaller1 = new ServiceInstaller();
+        ServiceProcessInstaller _serviceProcessInstaller = new ServiceProcessInstaller();
+        ServiceInstaller _serviceInstaller = new ServiceInstaller();
         String _parameters = "";
 
         public iTuneServiceInstaller()
@@ -24,8 +24,8 @@ namespace iTuneService
 
             Log.Write("iTuneService: Service Installed");
 
-            Installers.Add(_serviceProcessInstaller1);
-            Installers.Add(_serviceInstaller1);
+            Installers.Add(_serviceProcessInstaller);
+            Installers.Add(_serviceInstaller);
         }
         void ProjectInstaller_BeforeInstall(object sender, InstallEventArgs e)
         {
@@ -36,21 +36,23 @@ namespace iTuneService
             Log.Write(Context.Parameters.Count.ToString());
 
             // Configure Account for Service Process.
-            _serviceProcessInstaller1.Account = ServiceAccount.User;
-            _serviceProcessInstaller1.Username = Context.Parameters["UserName"];
-            String passU = Decrypt(Context.Parameters["EncryptedPassword"], DateTime.Now.ToLongDateString());
-            _serviceProcessInstaller1.Password = passU;
+            _serviceProcessInstaller.Account = ServiceAccount.User;
+            _serviceProcessInstaller.Username = Context.Parameters["UserName"];
+
+            // Decrypt password from args using today's date as a long string for the password
+            var passU = Decrypt(Context.Parameters["EncryptedPassword"], DateTime.Now.ToLongDateString());
+            _serviceProcessInstaller.Password = passU;
             _parameters = "\"" + Context.Parameters["ITunesPath"]  + "\"";
 
             // Configure ServiceName
-            _serviceInstaller1.DisplayName = "iTuneServer Service";
-            _serviceInstaller1.StartType = ServiceStartMode.Automatic;
-            _serviceInstaller1.ServiceName = "iTuneServer Service";
+            _serviceInstaller.DisplayName = iTuneService.PublicServiceName;
+            _serviceInstaller.StartType = ServiceStartMode.Automatic;
+            _serviceInstaller.ServiceName = iTuneService.PublicServiceName;
         }
 
         void ProjectInstaller_BeforeUninstall(object sender, InstallEventArgs e)
         {
-            _serviceInstaller1.ServiceName = "iTuneServer Service";
+            _serviceInstaller.ServiceName = iTuneService.PublicServiceName;
         }
 
         public override void Install(IDictionary stateSaver)
@@ -62,7 +64,7 @@ namespace iTuneService
                 throw new Win32Exception();
             try
             {
-                IntPtr hSvc = OpenService(hScm, _serviceInstaller1.ServiceName, SERVICE_ALL_ACCESS);
+                IntPtr hSvc = OpenService(hScm, _serviceInstaller.ServiceName, SERVICE_ALL_ACCESS);
                 if (hSvc == IntPtr.Zero)
                     throw new Win32Exception();
                 try
@@ -103,30 +105,32 @@ namespace iTuneService
             }
         }
 
-        public static byte[] Decrypt(byte[] cipherData,  byte[] Key, byte[] IV)
+        public static byte[] Decrypt(byte[] cipherData, byte[] key, byte[] IV)
         {
+            using (var ms = new MemoryStream())
+            using (var alg = Rijndael.Create())
+            {
+                alg.Key = key;
+                alg.IV = IV;
 
-            var ms = new MemoryStream();
+                using (var cs = new CryptoStream(ms, alg.CreateDecryptor(), CryptoStreamMode.Write))
+                {
+                    cs.Write(cipherData, 0, cipherData.Length);
+                }
+                
+                var decryptedData = ms.ToArray();
 
-            var alg = Rijndael.Create();
-            alg.Key = Key;
-            alg.IV = IV;
-
-            var cs = new CryptoStream(ms,
-                alg.CreateDecryptor(), CryptoStreamMode.Write);
-            cs.Write(cipherData, 0, cipherData.Length);
-            cs.Close();
-            byte[] decryptedData = ms.ToArray();
-
-            return decryptedData;
+                return decryptedData;
+            }
         }
 
-        public static string Decrypt(string cipherText, string Password)
+        public static string Decrypt(string cipherText, string password)
         {
+            var salt = new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 };
 
-            byte[] cipherBytes = Convert.FromBase64String(cipherText);
-			var pdb = new Rfc2898DeriveBytes(Password, new byte[] {0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76});
-            byte[] decryptedData = Decrypt(cipherBytes, pdb.GetBytes(32), pdb.GetBytes(16));
+            var cipherBytes = Convert.FromBase64String(cipherText);
+            var pdb = new Rfc2898DeriveBytes(password, salt);
+            var decryptedData = Decrypt(cipherBytes, pdb.GetBytes(32), pdb.GetBytes(16));
 
             return System.Text.Encoding.Unicode.GetString(decryptedData);
         }
