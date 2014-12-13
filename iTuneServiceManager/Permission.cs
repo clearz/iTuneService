@@ -46,7 +46,7 @@ namespace iTuneServiceManager
 
         private const int DESIRED_ACCESS = 0x1fff;
 
-        public static long SetRight(string accountName, string privilegeName)
+        public static long SetRight(DomainAuthCredentials credentials, string privilegeName)
         {
             var lastError = 0L;
             var sid = IntPtr.Zero;
@@ -60,11 +60,11 @@ namespace iTuneServiceManager
 
 		    try
 		    {
-		        LookupAccountName(string.Empty, accountName, IntPtr.Zero, ref cbsid, domainName, ref cbdomainLength, ref use);
+		        LookupAccountName(credentials.Domain, credentials.Username, IntPtr.Zero, ref cbsid, domainName, ref cbdomainLength, ref use);
 		        domainName = new StringBuilder(cbdomainLength);
 		        sid = Marshal.AllocHGlobal(cbsid);
 
-		        var flag = LookupAccountName(string.Empty, accountName, sid, ref cbsid, domainName, ref cbdomainLength, ref use);
+                var flag = LookupAccountName(credentials.Domain, credentials.Username, sid, ref cbsid, domainName, ref cbdomainLength, ref use);
 		        if (!flag)
 		        {
 		            lastError = GetLastError();

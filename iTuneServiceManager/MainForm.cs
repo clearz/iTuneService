@@ -13,7 +13,9 @@ using System.Web;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.ServiceProcess;
+using iTuneServiceManager.Localization;
 
 namespace iTuneServiceManager
 {
@@ -21,154 +23,280 @@ namespace iTuneServiceManager
     {
 		private readonly Logger _logger = Logger.GetLogger(writeToConsole: true);
 
-	    bool passwordsMatching = false;
+        private bool _setupComplete = false;
 
-        public bool PasswordsMatching
+        public bool iTunesFound
         {
-            get { return passwordsMatching; }
+            get { return !string.IsNullOrWhiteSpace(iTunesPathBox.Text) && File.Exists(iTunesPathBox.Text); }
         }
-        bool iTunesExeFound = false;
-
-        public bool ITunesExeFound
+        public bool PasswordsMatch
         {
-            get { return iTunesExeFound; }
+            get { return passwordBox1.Text != "" && passwordBox2.Text != "" && passwordBox1.Text == passwordBox2.Text; }
+        }
+        private DomainAuthCredentials CurrentCredentials
+        {
+            get
+            {
+                if (!PasswordsMatch || string.IsNullOrWhiteSpace(usernameBox.Text)) return null;
+
+                return new DomainAuthCredentials(
+                    (string.IsNullOrWhiteSpace(computerNameBox.Text) ? "." : computerNameBox.Text.Trim()) + "\\" + usernameBox.Text.Trim(),
+                    passwordBox1.Text);
+            }
         }
 
         public MainForm()
         {
-            _logger.Log( "MainForm.InitializeComponent()" );
+            _logger.Log("MainForm.InitializeComponent()");
             InitializeComponent();
-            try
-            {
-                computerNameBox.Text = Environment.GetEnvironmentVariable("COMPUTERNAME") ?? ".";
-
-                _logger.Log("computerNameBox.Text: " + computerNameBox.Text);
-            }
-            catch (Exception e)
-            {
-                _logger.Log(e);
-            }
-            // validate the credentials
+            ServiceManager.StateChanged += OnServiceManagerStateChanged;
         }
 
-        public void Form1_Load(object sender, EventArgs e) // TO DO - Call this from UninstallWin's Close method
+        public void OnLoad(object sender, EventArgs e)
         {
             string programFilesDir;
-            if ((programFilesDir = Environment.GetEnvironmentVariable("ProgramFiles(x86)")) == null)
-                programFilesDir = Environment.GetEnvironmentVariable("ProgramFiles");
+            if ((programFilesDir = Environment.GetEnvironmentVariable("ProgramFiles(x86)")) == null) programFilesDir = Environment.GetEnvironmentVariable("ProgramFiles");
+
+            var savedCreds = ServiceManager.RetrieveCredential();
+            var startDomain = Environment.MachineName;
+            var startUser = Environment.UserName;
+            var startPassword = string.Empty;
+
+            // See who's running the current service and look up his credentials if possible
+            var currentUser = ServiceManager.GetServiceUsername();
+            if (currentUser != null)
+            {
+                startDomain = currentUser.Domain == "." ? Environment.MachineName : currentUser.Domain;
+                startUser = currentUser.Username;
+                if (savedCreds != null && currentUser.UserEquals(savedCreds.Item1))
+                {
+                    startPassword = savedCreds.Item2;
+                }
+                else
+                {
+                    if (savedCreds != null) ServiceManager.RemoveCredential();
+                    startPassword = string.Empty;
+                }
+            }
 
             _logger.Log("programFilesDir: " + programFilesDir);
+            
+            // Get list of installed users for our combobox
+            var localCreds = new List<DomainAuthCredentials>();
             var query = new SelectQuery("Win32_UserAccount");
-            var searcher = new ManagementObjectSearcher(query);
-			if(!(sender is UninstallWin))
-				foreach (ManagementObject envVar in searcher.Get())
-					usernameBox.Items.Add(envVar["Name"]);
+            using (var searcher = new ManagementObjectSearcher(query))
+            {
+                foreach (ManagementObject envVar in searcher.Get())
+                {
+                    localCreds.Add(new DomainAuthCredentials(Environment.MachineName + "\\" + envVar["Name"], null));
+                }
+            }
+            
+            // Add list to combobox and select start user if there
+            usernameBox.Items.AddRange(localCreds.ToArray());
+            var userToSelect = localCreds.FirstOrDefault(c => c.UserEquals(startDomain + "\\" + startUser));
+            if (userToSelect != null)
+            {
+                usernameBox.SelectedItem = userToSelect;
+            }
+            else
+            {
+                computerNameBox.Text = startDomain;
+                usernameBox.Text = startUser;
+            }
+            passwordBox1.Text = startPassword;
+            passwordBox2.Text = startPassword;
 
-            usernameBox.SelectedItem = Environment.UserName;
-
+            _logger.Log("computerNameBox.Text: " + computerNameBox.Text);
             _logger.Log("Environment.UserName: " + Environment.UserName);
-            if (File.Exists(programFilesDir + @"\iTunes\iTunes.exe"))
+
+            // Initialize the state as setup until we can check
+            ServiceManager.CurrentState = ServiceManager.State.Setup;
+
+            // Use currently set iTunes path or try to detect
+            var currentiTunesPath = ServiceManager.GetServiceiTunesPath();
+            if (currentiTunesPath != null)
             {
-                _logger.Log("iTunes Directory: " + programFilesDir + @"\iTunes\iTunes.exe");
-                iTunesPathBox.Text = programFilesDir + @"\iTunes\iTunes.exe";
-                if (ServiceInstalledAlready() && e != null)
+                openFileDialog1.InitialDirectory = Path.GetDirectoryName(currentiTunesPath);
+                iTunesPathBox.Text = currentiTunesPath;
+            }
+            else
+            {
+                if (File.Exists(programFilesDir + @"\iTunes\iTunes.exe"))
                 {
-                    pictureBox1.Visible = passwordBox1.Enabled = passwordBox2.Enabled = usernameBox.Enabled = selectITunesExeBtn.Enabled = installBtn.Enabled = false;
+                    _logger.Log("iTunes Directory: " + programFilesDir + @"\iTunes\iTunes.exe");
+                    iTunesPathBox.Text = programFilesDir + @"\iTunes\iTunes.exe";
+                    openFileDialog1.InitialDirectory = programFilesDir + @"\iTunes\iTunes.exe";
+                }
+                else
+                {
+                    if (programFilesDir != null) openFileDialog1.InitialDirectory = programFilesDir;
+                    _logger.Log("iTunes Directory: Not Found");
+                }
+            }
+
+            // Check to see if service is installed / running
+            if (ServiceManager.IsServiceInstalled)
+            {
+                try
+                {
+                    var serviceStatus = ServiceManager.ServiceStatus;
+                    _logger.Log("Service Status: " + serviceStatus);
+
+                    ServiceManager.CurrentState = serviceStatus == ServiceControllerStatus.Stopped
+                                                      ? ServiceManager.State.ServiceStopped
+                                                      : ServiceManager.State.ServiceRunning;
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log("Error while getting service status.");
+                    _logger.Log(ex);
+                }
+            }
+
+            // Manually trigger actions that fire on app events
+            CheckSetupComplete();
+            OnServiceManagerStateChanged(null, ServiceManager.CurrentState);
+        }
+
+        public void CheckSetupComplete()
+        {
+            var isComplete = iTunesFound && PasswordsMatch;
+
+            if (isComplete && (ServiceManager.CurrentState == ServiceManager.State.Setup))
+            {
+                ServiceManager.CurrentState = ServiceManager.State.SetupComplete;
+            }
+            else if (!isComplete && (ServiceManager.CurrentState == ServiceManager.State.SetupComplete))
+            {
+                ServiceManager.CurrentState = ServiceManager.State.Setup;
+            }
+
+            _setupComplete = isComplete;
+        }
+
+        private void OnServiceManagerStateChanged(object sender, ServiceManager.State state)
+        {
+            if (InvokeRequired)
+                Invoke(new Action(() => HandleStateChange(state)));
+            else
+                HandleStateChange(state);
+        }
+        private void HandleStateChange(ServiceManager.State state)
+        {
+            switch (state)
+            {
+                case ServiceManager.State.Setup:
+                case ServiceManager.State.SetupComplete:
+                    selectITunesExeBtn.Enabled = true;
+                    computerNameBox.Enabled = true;
+                    usernameBox.Enabled = true;
+                    passwordBox1.Enabled = true;
+                    passwordBox2.Enabled = true;
+                    pictureBox1.Visible = (state == ServiceManager.State.SetupComplete);
+                    installBtn.Enabled = (state == ServiceManager.State.SetupComplete);
+                    UninstallBtn.Enabled = false;
+                    startBtn.Enabled = false;
+                    startBtn.Text = MainFormStrings.ACTION_START;
+                    openITunes.Enabled = false;
+                    if (state == ServiceManager.State.Setup) CheckSetupComplete();
+                    break;
+                case ServiceManager.State.Installing:
+                case ServiceManager.State.Uninstalling:
+                    selectITunesExeBtn.Enabled = false;
+                    computerNameBox.Enabled = false;
+                    usernameBox.Enabled = false;
+                    passwordBox1.Enabled = false;
+                    passwordBox2.Enabled = false;
+                    pictureBox1.Visible = (state == ServiceManager.State.Installing);
+                    installBtn.Enabled = false;
+                    UninstallBtn.Enabled = false;
+                    startBtn.Enabled = false;
+                    startBtn.Text = MainFormStrings.ACTION_START;
+                    openITunes.Enabled = false;
+                    break;
+                case ServiceManager.State.ServiceRunning:
+                    selectITunesExeBtn.Enabled = false;
+                    computerNameBox.Enabled = false;
+                    usernameBox.Enabled = false;
+                    passwordBox1.Enabled = false;
+                    passwordBox2.Enabled = false;
+                    pictureBox1.Visible = false;
+                    installBtn.Enabled = false;
                     UninstallBtn.Enabled = true;
-                    return;
-                }
-                openITunes.Enabled = true;
-                openFileDialog1.InitialDirectory = programFilesDir + @"\iTunes\iTunes.exe";
-                iTunesExeFound = true;
-                installBtn.Enabled = passwordsMatching;
-                pictureBox1.Visible = passwordsMatching;
-            }
-            else _logger.Log( "iTunes Directory: Not Found" );
-
-            if (!iTunesExeFound)
-            {
-                if(programFilesDir != null)
-                    openFileDialog1.InitialDirectory = programFilesDir;
-            }
-        }
-
-        private bool ServiceInstalledAlready()
-        {
-	        if (!ServiceManager.IsServiceInstalled) return false;
-            try
-            {
-                if (ServiceManager.ServiceStatus == ServiceControllerStatus.Stopped)
-                {
-                    startBtn.Text = "Start";
-                }
-                else if (ServiceManager.ServiceStatus == ServiceControllerStatus.Running)
-                {
-                    startBtn.Text = "Stop";
-                }
-                _logger.Log("ServiceManager.Status: " + ServiceManager.ServiceStatus);
-                _logger.Log("startBtn.Text: " + startBtn.Text);
-                startBtn.Enabled = true;
-
-                _logger.Log("returning true");
-                return true;
-            }
-            catch(Exception e)
-            {
-                _logger.Log(e);
-                _logger.Log("returning false");
-                return false;
+                    startBtn.Enabled = true;
+                    startBtn.Text = MainFormStrings.ACTION_STOP;
+                    openITunes.Enabled = false;
+                    break;
+                case ServiceManager.State.ServiceStopped:
+                    selectITunesExeBtn.Enabled = false;
+                    computerNameBox.Enabled = false;
+                    usernameBox.Enabled = false;
+                    passwordBox1.Enabled = false;
+                    passwordBox2.Enabled = false;
+                    pictureBox1.Visible = false;
+                    installBtn.Enabled = false;
+                    UninstallBtn.Enabled = true;
+                    startBtn.Enabled = true;
+                    startBtn.Text = MainFormStrings.ACTION_START;
+                    openITunes.Enabled = true;
+                    break;
+                default:
+                    if (Debugger.IsAttached) Debugger.Break();
+                    break;
             }
         }
 
-
-        private void installBtn_Click(object sender, EventArgs e)
+        private void OnSelectITunesExeBtnClick(object sender, EventArgs e)
         {
-            this.Visible = false;
-            var box = new InstallWin(this) {Visible = true, Owner = this};
+            var r = openFileDialog1.ShowDialog();
+            if (r != DialogResult.OK) return;
+
+            iTunesPathBox.Text = openFileDialog1.FileName;
+            CheckSetupComplete();
+        }
+
+        private void OnUsernameBoxSelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (usernameBox.SelectedIndex >= 0)
+            {
+                var selected = (DomainAuthCredentials)usernameBox.Items[usernameBox.SelectedIndex];
+                computerNameBox.Text = selected.Domain;
+                BeginInvoke(new Action(() => usernameBox.Text = selected.Username)); // http://stackoverflow.com/a/1052762
+            }
+        }
+        private void OnPasswordBoxesKeyUp(object sender, KeyEventArgs e)
+        {
+            CheckSetupComplete();
+
+            if (PasswordsMatch)
+            {
+                InfoLbl.Text = MainFormStrings.INFO_LABEL_VPASS;
+            }
+        }
+
+        private void OnInstallBtnClick(object sender, EventArgs e)
+        {
+            Visible = false;
+
+            var box = new InstallWin(this, CurrentCredentials) { Visible = true, Owner = this };
             IntPtr hmenu = Win32.GetSystemMenu(box.Handle, 0);
             int cnt = Win32.GetMenuItemCount(hmenu);
 
             // remove 'close' action
-	        Win32.RemoveMenu(hmenu, cnt - 1, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
+            Win32.RemoveMenu(hmenu, cnt - 1, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
 
             // remove extra menu line
-	        Win32.RemoveMenu(hmenu, cnt - 2, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
+            Win32.RemoveMenu(hmenu, cnt - 2, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
 
-	        Win32.DrawMenuBar(box.Handle);
+            Win32.DrawMenuBar(box.Handle);
         }
-
-        private void selectITunesExeBtn_Click(object sender, EventArgs e)
-        {
-            DialogResult r = openFileDialog1.ShowDialog();
-            if (r == DialogResult.OK)
-            {
-                iTunesPathBox.Text = openFileDialog1.FileName;
-                installBtn.Enabled = passwordsMatching;
-                pictureBox1.Visible = passwordsMatching;
-                openITunes.Enabled = true;
-            }
-        }
-
-
-        private void passwordBox1_KeyUp(object sender, KeyEventArgs e)
-        {
-            passwordsMatching = (passwordBox1.Text != "" && passwordBox2.Text != "" && passwordBox1.Text == passwordBox2.Text);
-            if (passwordsMatching)
-            {
-                installBtn.Enabled = iTunesExeFound && iTunesPathBox.Text != "";
-                pictureBox1.Visible = iTunesExeFound && iTunesPathBox.Text != "";
-                InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_VPASS;
-            }
-            else
-                pictureBox1.Visible = installBtn.Enabled = false;
-
-        }
-
-        private void UninstallBtn_Click(object sender, EventArgs e)
+        private void OnUninstallBtnClick(object sender, EventArgs e)
         {
             if (MessageBox.Show(this, "Are you sure you want to uninstall the iTuneServer service?", "Uninstall Service", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-                this.Visible = false;
+                Visible = false;
+
                 var box = new UninstallWin(this) {Owner = this, Visible = true};
 	            IntPtr hmenu = Win32.GetSystemMenu(box.Handle, 0);
                 int cnt = Win32.GetMenuItemCount(hmenu);
@@ -182,114 +310,105 @@ namespace iTuneServiceManager
 	            Win32.DrawMenuBar(box.Handle);
             }
         }
-        private void startBtn_Click(object sender, EventArgs e)
+        
+        private void OnStartBtnClick(object sender, EventArgs e)
         {
-                if (startBtn.Text == "Start")
+            startBtn.Enabled = false;
+
+            var shouldStart = (startBtn.Text == MainFormStrings.ACTION_START);
+
+            while (true)
+            {
+                try
                 {
-                    try
+                    if (shouldStart)
                     {
                         ServiceManager.StartService(ServiceManager.ServiceName);
                         InfoLbl.Text = "The iTuneServer Service is now running";
-                        openITunes.Enabled = false;
-                        startBtn.Text = "Stop";
                     }
-                    catch (Exception ex)
-					{
-						_logger.Log(ex);
-                        if (MessageBox.Show(this, ex.Message, "Error Starting Service", MessageBoxButtons.RetryCancel,MessageBoxIcon.Error) == DialogResult.Retry)
-                         startBtn_Click(sender, e);
-
-                    }
-                }
-                else
-                {
-                    try
+                    else
                     {
                         ServiceManager.StopService(ServiceManager.ServiceName);
                         InfoLbl.Text = "The iTuneServer Service has stopped running";
-                        openITunes.Enabled = true;
-                        startBtn.Text = "Start";
                     }
-                    catch (Exception ex)
-                    {
-						_logger.Log(ex);
-                        if (MessageBox.Show(this, ex.Message, "Error Stopping Service", MessageBoxButtons.RetryCancel,MessageBoxIcon.Error) == DialogResult.Retry)
-                            startBtn_Click(sender, e);
-
-                    }
+                    break;
                 }
+                catch (Exception ex)
+                {
+                    _logger.Log(ex);
+                    var answer = MessageBox.Show(this,
+                                                 ex.Message,
+                                                 string.Format("Error {0} Service", shouldStart ? "Starting" : "Stopping"),
+                                                 MessageBoxButtons.RetryCancel,
+                                                 MessageBoxIcon.Error);
+                    if (answer == DialogResult.Cancel) break;
+                }
+            }
         }
-
-        private void computerNameBox_Leave(object sender, EventArgs e)
+        private void OnOpenITunesClick(object sender, EventArgs e)
         {
-
-        }
-
-
-        private void selectITunesExeBtn_MouseEnter(object sender, EventArgs e)
-        {
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_SELECT;
-        }
-
-        private void ITunes_MouseLeave(object sender, EventArgs e)
-        {
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_DEFAULT;
-        }
-
-        private void computerNameBox_MouseEnter(object sender, EventArgs e)
-		{
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_COMPUTER;
-        }
-
-        private void comboBox1_MouseEnter(object sender, EventArgs e)
-        {
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_USER;
-        }
-
-        private void passwordBox1_MouseEnter(object sender, EventArgs e)
-        {
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_PASS;
-        }
-
-        private void passwordBox2_MouseEnter(object sender, EventArgs e)
-		{
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_RPASS;
-        }
-
-        private void installBtn_MouseEnter(object sender, EventArgs e)
-        {
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_INSTALL;
-        }
-
-        private void UninstallBtn_MouseEnter(object sender, EventArgs e)
-        {
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_UNINSTALL;
-        }
-
-        private void startBtn_MouseEnter(object sender, EventArgs e)
-        {
-            InfoLbl.Text = startBtn.Text == "Start"
-                               ? Localization.MainFormStrings.INFO_LABEL_START
-                               : Localization.MainFormStrings.INFO_LABEL_STOP;
-        }
-
-        private void stopBtn_MouseEnter(object sender, EventArgs e)
-        {
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_STOP;
-        }
-
-        private void openITunes_MouseEnter(object sender, EventArgs e)
-        {
-            InfoLbl.Text = Localization.MainFormStrings.INFO_LABEL_OPEN;
-        }
-
-        private void openITunes_Click(object sender, EventArgs e)
-        {
-            if (iTunesPathBox.Text == "") selectITunesExeBtn_Click(sender, e);
+            if (iTunesPathBox.Text == "") OnSelectITunesExeBtnClick(sender, e);
             if (iTunesPathBox.Text == "") return;
             var p = new Process();
+            if (_setupComplete)
+            {
+                var creds = CurrentCredentials;
+                p.StartInfo.Domain = creds.Domain;
+                p.StartInfo.UserName = creds.Username;
+                p.StartInfo.Password = creds.GetPasswordAsSecureString();
+            }
             p.StartInfo.FileName = iTunesPathBox.Text;
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.WorkingDirectory = Path.GetDirectoryName(iTunesPathBox.Text);
             p.Start();
         }
+
+        #region Mouse Over Text Handling
+
+        private void OnControlsMouseLeave(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_DEFAULT;
+        }
+
+        private void OnSelectITunesExeBtnMouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_SELECT;
+        }
+        private void OnComputerNameBoxMouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_COMPUTER;
+        }
+        private void OnUsernameBoxMouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_USER;
+        }
+        private void OnPasswordBox1MouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_PASS;
+        }
+        private void OnPasswordBox2MouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_RPASS;
+        }
+        private void OnInstallBtnMouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_INSTALL;
+        }
+        private void OnUninstallBtnMouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_UNINSTALL;
+        }
+        private void OnStartBtnMouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = startBtn.Text == MainFormStrings.ACTION_START
+                               ? MainFormStrings.INFO_LABEL_START
+                               : MainFormStrings.INFO_LABEL_STOP;
+        }
+        private void OnOpenITunesMouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_OPEN;
+        }
+
+        #endregion
     }
 }

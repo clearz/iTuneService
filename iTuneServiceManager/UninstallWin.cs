@@ -21,59 +21,85 @@ namespace iTuneServiceManager
     public partial class UninstallWin : Form
     {
 		private readonly Logger _logger = Logger.GetLogger(writeToConsole: true);
-	    private readonly MainForm _mainForm;
 
-		public void Invoke(UninstallWin i, Action method)
-		{
-            Action toInvoke =
-                () =>
-                {
-                    try
-                    {
-                        method();
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.Log(e);
-                        ShowError("Error @ " + method.GetType().Name);
-                    }
-                };
+        private readonly MainForm _mainForm;
 
-            if (i.InvokeRequired)
-                i.Invoke(toInvoke);
+        public void InvokeIfRequired(Action method)
+        {
+            if (InvokeRequired)
+                Invoke(method);
             else
-                toInvoke();
+                method();
         }
 
         public UninstallWin(MainForm mainForm)
         {
+            if (mainForm == null) throw new ArgumentNullException("mainForm");
             _mainForm = mainForm;
             InitializeComponent();
+
             new Thread(Uninstall).Start();
+        }
+
+        private void OnFormClosed(object sender, FormClosedEventArgs e)
+        {
+            _mainForm.CheckSetupComplete();
+            _mainForm.Visible = true;
         }
 
         public void Uninstall()
         {
-            Thread.Sleep(1000);
-            Invoke(this, StopiTuneService);
-            Thread.Sleep(1000);
-            Invoke(this, UninstalliTuneService);
-            Thread.Sleep(1600);
-			Invoke(this, Hide);
+	        Label currentLabel = null;
+            var waitBeforeReturnToMainForm = 1600;
+
+            try
+            {
+                Thread.Sleep(500);
+
+                currentLabel = StoppingiTuneServiceTick;
+                StopiTuneService();
+                UpdateStatus(currentLabel, true);
+
+                Thread.Sleep(1000);
+
+                currentLabel = UninstalliTuneServiceLbl;
+                UninstalliTuneService();
+                InvokeIfRequired(
+                    () =>
+                    {
+                        UninstalliTuneServiceTick.Visible = true;
+                        SuccessLbl.Visible = true;
+                    });
+
+                ServiceManager.CurrentState = ServiceManager.State.Setup;
+            }
+            catch (Exception e)
+            {
+                _logger.Log(e);
+                UpdateStatus(currentLabel, false);
+                waitBeforeReturnToMainForm = 3000;
+            }
+
+            Thread.Sleep(waitBeforeReturnToMainForm);
+
+            InvokeIfRequired(Close);
         }
 
-        public void ShowError(string err)
+        private void UpdateStatus(Label tickLabel, bool success)
         {
-            MessageBox.Show(this, err, "Error Uninstalling Service", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            Visible = false;
-            _mainForm.Visible = true;
-        }
-
-        public void UninstalliTuneService()
-        {
-            ServiceManager.Uninstall();
-			UninstalliTuneServiceTick.Visible = true;
-			SuccessLbl.Visible = true;
+            InvokeIfRequired(
+                () =>
+                {
+                    if (!success)
+                    {
+                        SuccessLbl.Text = "FAILED!";
+                        SuccessLbl.ForeColor = Color.Red;
+                        SuccessLbl.Show();
+                        tickLabel.Text = "✖";
+                        tickLabel.ForeColor = Color.Red;
+                    }
+                    tickLabel.Show();
+                });
         }
 
         public void StopiTuneService()
@@ -81,22 +107,13 @@ namespace iTuneServiceManager
             if (ServiceManager.ServiceStatus == ServiceControllerStatus.Running)
             {
                 ServiceManager.StopService(ServiceManager.ServiceName);
-                _mainForm.startBtn.Enabled = true;
             }
-
-            StoppingiTuneServiceTick.Visible = true;
         }
 
-        public new void Hide()
+        public void UninstalliTuneService()
         {
-            _mainForm.pictureBox1.Visible = false;
-            _mainForm.passwordBox1.Enabled = _mainForm.passwordBox2.Enabled = _mainForm.usernameBox.Enabled = _mainForm.selectITunesExeBtn.Enabled = true;
-            _mainForm.installBtn.Enabled = _mainForm.ITunesExeFound && _mainForm.PasswordsMatching;
-            _mainForm.UninstallBtn.Enabled = false;
-            _mainForm.startBtn.Enabled = false;
-            _mainForm.openITunes.Enabled = true;
-			Closed += (sender, args) => { _mainForm.Visible = true; };
-			Close();
+            ServiceManager.Uninstall();
+            ServiceManager.RemoveCredential();
         }
     }
 }

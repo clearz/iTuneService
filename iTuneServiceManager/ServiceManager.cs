@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration.Install;
 using System.DirectoryServices.AccountManagement;
@@ -10,16 +11,43 @@ using System.Resources;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.ServiceProcess;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
+using CredentialManagement;
+using DialogResult = System.Windows.Forms.DialogResult;
 
 namespace iTuneServiceManager
 {
     public static class ServiceManager
     {
+        public enum State
+        {
+            Setup,
+            SetupComplete,
+            Installing,
+            ServiceRunning,
+            ServiceStopped,
+            Uninstalling,
+        }
+
         public const string ServiceName = "iTuneServer Service";
+        public const string CredentialName = "iTuneServer Service Account";
 
         private static readonly Logger Logger = Logger.GetLogger(true);
+        private static State _currentState;
+
+        public static event EventHandler<State> StateChanged;
+        public static State CurrentState
+        {
+            get { return _currentState; }
+            set
+            {
+                if (_currentState == value) return;
+                _currentState = value;
+                if (StateChanged != null) StateChanged(null, _currentState);
+            }
+        }
 
         #region DLLImports
 
@@ -33,10 +61,41 @@ namespace iTuneServiceManager
 
         public static bool IsServiceInstalled
         {
-	        get
-	        {
-                return ServiceController.GetServices().Any(controller => controller.ServiceName == ServiceName); 
-	        }
+            get
+            {
+                return ServiceController.GetServices().Any(controller => controller.ServiceName == ServiceName);
+            }
+        }
+
+        public static DomainAuthCredentials GetServiceUsername()
+        {
+            var query = new SelectQuery(string.Format("select name, startname from Win32_Service where name = '{0}'", ServiceManager.ServiceName));
+
+            using (var searcher = new ManagementObjectSearcher(query))
+            {
+                foreach (ManagementObject service in searcher.Get())
+                {
+                    return new DomainAuthCredentials((string)service["startname"], null);
+                }
+            }
+
+            return null;
+        }
+
+        public static string GetServiceiTunesPath()
+        {
+            var query = new SelectQuery(string.Format("select name, pathname from Win32_Service where name = '{0}'", ServiceManager.ServiceName));
+
+            using (var searcher = new ManagementObjectSearcher(query))
+            {
+                foreach (ManagementObject service in searcher.Get())
+                {
+                    var m = Regex.Match((string)service["pathname"], @"^[ ]*(?:""[^""]*""|[^ ]+)[ ]+(?:""(?<itunes>[^""]*)""|(?<itunes>[^ ]+))");
+                    if (m.Success) return m.Groups["itunes"].Value;
+                }
+            }
+
+            return null;
         }
 
         public static ServiceControllerStatus ServiceStatus
@@ -44,16 +103,15 @@ namespace iTuneServiceManager
             get
             {
                 foreach (var controller in ServiceController.GetServices().Where(controller => controller.ServiceName == ServiceName))
-					return controller.Status;
-	            
-	            return ServiceControllerStatus.Stopped;
+                    return controller.Status;
+
+                return ServiceControllerStatus.Stopped;
             }
         }
 
-        public static bool AuthenticateUser(string domainUser, string password)
+        public static bool AuthenticateUser(DomainAuthCredentials credentials)
         {
             var loginToken = IntPtr.Zero;
-            var credentials = new DomainAuthCredentials(domainUser, password);
 
             try
             {
@@ -73,9 +131,9 @@ namespace iTuneServiceManager
             }
         }
 
-        public static bool ChangeCredentials(string username, string password)
+        public static bool ChangeCredentials(DomainAuthCredentials credentials)
         {
-            if (!AuthenticateUser(username, password))
+            if (!AuthenticateUser(credentials))
             {
                 Logger.Log("Invalid credentials");
                 throw new PasswordException();
@@ -83,11 +141,11 @@ namespace iTuneServiceManager
 
             try
             {
-                Permission.SetRight(username, "SeServiceLogonRight");
+                Permission.SetRight(credentials, "SeServiceLogonRight");
             }
             catch (Exception exception)
             {
-                Logger.Log("Could not set right SeServiceLogonRight to " + username + ": " + exception);
+                Logger.Log("Could not set right SeServiceLogonRight to " + credentials.ToFullUsername() + ": " + exception);
             }
 
             try
@@ -95,8 +153,8 @@ namespace iTuneServiceManager
                 string str = "Win32_Service.Name='";
                 var obj2 = new ManagementObject(str + ServiceName + "'");
                 var args = new object[11];
-                args[6] = username;
-                args[7] = password;
+                args[6] = credentials.ToFullUsername();
+                args[7] = credentials.Password;
                 obj2.InvokeMethod("Change", args);
             }
             catch (Exception exception2)
@@ -112,7 +170,52 @@ namespace iTuneServiceManager
 
         public static void Install(String[] args)
         {
-			ManagedInstallerClass.InstallHelper(args);
+            ManagedInstallerClass.InstallHelper(args);
+        }
+
+        public static bool PersistCredentials(string username, string password)
+        {
+            using (var cm =
+                new Credential
+                {
+                    Target = CredentialName,
+                    PersistanceType = PersistanceType.LocalComputer,
+                    Username = username,
+                    Password = password,
+                })
+            {
+                return cm.Save();
+            }
+        }
+
+        public static Tuple<string, string> RetrieveCredential()
+        {
+            using (var cm =
+                new Credential
+                {
+                    Target = CredentialName,
+                    PersistanceType = PersistanceType.LocalComputer,
+                })
+            {
+                if (!cm.Exists() || !cm.Load()) return null;
+
+                return Tuple.Create(cm.Username, cm.Password);
+            }
+        }
+
+        public static bool RemoveCredential()
+        {
+            using (var cm =
+                new Credential
+                {
+                    Target = CredentialName,
+                    PersistanceType = PersistanceType.LocalComputer,
+                })
+            {
+                if (!cm.Exists()) return true;
+
+                return cm.Delete();
+            }
         }
 
         public static bool RestartService()
@@ -139,14 +242,14 @@ namespace iTuneServiceManager
             foreach (var controller in ServiceController.GetServices())
             {
                 if (controller.ServiceName != strServiceName) continue;
-                
+
                 try
                 {
                     if (controller.Status == ServiceControllerStatus.Stopped)
                     {
                         controller.Start();
                     }
-                
+
                     controller.WaitForStatus(ServiceControllerStatus.Running, new TimeSpan(0, 1, 0));
 
                     if (controller.Status != ServiceControllerStatus.Running)
@@ -160,6 +263,8 @@ namespace iTuneServiceManager
                     return false;
                 }
 
+                CurrentState = State.ServiceRunning;
+                
                 return true;
             }
 
@@ -196,6 +301,9 @@ namespace iTuneServiceManager
                         Logger.Log("Exception when stopping!\r\n" + exception);
                         throw;
                     }
+
+                    CurrentState = State.ServiceStopped;
+
                     return true;
                 }
             }
@@ -226,8 +334,8 @@ namespace iTuneServiceManager
                         StopService();
                     }
                     catch (Exception)
-                    {}
-                    
+                    { }
+
                     var location = "./iTuneService.exe";
                     if (location == "")
                     {
@@ -236,33 +344,12 @@ namespace iTuneServiceManager
                     }
                     else
                     {
-                        ManagedInstallerClass.InstallHelper(new[] {"/u", location});
+                        ManagedInstallerClass.InstallHelper(new[] { "/u", location });
                     }
                 }
                 catch (Exception exception)
                 {
                     MessageBox.Show("Could not uninstall service - " + exception);
-                }
-            }
-        }
-
-        private class DomainAuthCredentials
-        {
-            public string Domain { get; private set; }
-            public string Password { get; private set; }
-            public string Username { get; private set; }
-
-            public DomainAuthCredentials(string domainUser, string password)
-            {
-                Username = domainUser;
-                Password = password;
-                Domain = ".";
-
-                if (domainUser.Contains(@"\"))
-                {
-                    var strArray = domainUser.Split(new[] {'\\'}, 2);
-                    Domain = strArray[0];
-                    Username = strArray[1];
                 }
             }
         }

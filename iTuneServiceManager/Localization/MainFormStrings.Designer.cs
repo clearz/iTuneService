@@ -61,7 +61,25 @@ namespace iTuneServiceManager.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The name of the computer on the local network..
+        ///   Looks up a localized string similar to Start.
+        /// </summary>
+        internal static string ACTION_START {
+            get {
+                return ResourceManager.GetString("ACTION_START", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stop.
+        /// </summary>
+        internal static string ACTION_STOP {
+            get {
+                return ResourceManager.GetString("ACTION_STOP", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The domain or name of the computer of the service user..
         /// </summary>
         internal static string INFO_LABEL_COMPUTER {
             get {
@@ -88,7 +106,7 @@ namespace iTuneServiceManager.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Run the iTuneServer Application (Only if service is stopped or not installed).
+        ///   Looks up a localized string similar to Run iTunes using service credentials (Only if service is stopped).
         /// </summary>
         internal static string INFO_LABEL_OPEN {
             get {

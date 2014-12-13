@@ -58,9 +58,9 @@
             this.GiveUserLoginAsServicePermissionLbl.ForeColor = System.Drawing.SystemColors.Highlight;
             this.GiveUserLoginAsServicePermissionLbl.Location = new System.Drawing.Point(44, 65);
             this.GiveUserLoginAsServicePermissionLbl.Name = "GiveUserLoginAsServicePermissionLbl";
-            this.GiveUserLoginAsServicePermissionLbl.Size = new System.Drawing.Size(266, 17);
+            this.GiveUserLoginAsServicePermissionLbl.Size = new System.Drawing.Size(265, 17);
             this.GiveUserLoginAsServicePermissionLbl.TabIndex = 1;
-            this.GiveUserLoginAsServicePermissionLbl.Text = "●  Giving User \'Login as Service\' Privilage";
+            this.GiveUserLoginAsServicePermissionLbl.Text = "●  Giving User \'Login as Service\' Privilege";
             // 
             // InstalliTuneServiceLbl
             // 
@@ -69,7 +69,7 @@
             this.InstalliTuneServiceLbl.ForeColor = System.Drawing.SystemColors.Highlight;
             this.InstalliTuneServiceLbl.Location = new System.Drawing.Point(44, 100);
             this.InstalliTuneServiceLbl.Name = "InstalliTuneServiceLbl";
-            this.InstalliTuneServiceLbl.Size = new System.Drawing.Size(173, 17);
+            this.InstalliTuneServiceLbl.Size = new System.Drawing.Size(203, 17);
             this.InstalliTuneServiceLbl.TabIndex = 2;
             this.InstalliTuneServiceLbl.Text = "●  Installing iTuneServer Service";
             // 
@@ -80,7 +80,7 @@
             this.StartiTuneServiceLbl.ForeColor = System.Drawing.SystemColors.Highlight;
             this.StartiTuneServiceLbl.Location = new System.Drawing.Point(44, 135);
             this.StartiTuneServiceLbl.Name = "StartiTuneServiceLbl";
-            this.StartiTuneServiceLbl.Size = new System.Drawing.Size(166, 17);
+            this.StartiTuneServiceLbl.Size = new System.Drawing.Size(196, 17);
             this.StartiTuneServiceLbl.TabIndex = 3;
             this.StartiTuneServiceLbl.Text = "●  Starting iTuneServer Service";
             // 
@@ -134,14 +134,14 @@
             // 
             // SuccessLbl
             // 
-            this.SuccessLbl.AutoSize = true;
             this.SuccessLbl.Font = new System.Drawing.Font("Century Gothic", 14F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Underline))), System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.SuccessLbl.ForeColor = System.Drawing.SystemColors.Highlight;
-            this.SuccessLbl.Location = new System.Drawing.Point(272, 170);
+            this.SuccessLbl.Location = new System.Drawing.Point(223, 170);
             this.SuccessLbl.Name = "SuccessLbl";
-            this.SuccessLbl.Size = new System.Drawing.Size(98, 23);
+            this.SuccessLbl.Size = new System.Drawing.Size(147, 23);
             this.SuccessLbl.TabIndex = 8;
             this.SuccessLbl.Text = "SUCCESS!";
+            this.SuccessLbl.TextAlign = System.Drawing.ContentAlignment.TopRight;
             this.SuccessLbl.Visible = false;
             // 
             // InstallWin
@@ -167,6 +167,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Installing...";
             this.TopMost = true;
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.OnFormClosed);
             this.ResumeLayout(false);
             this.PerformLayout();
 

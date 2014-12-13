@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.label1 = new System.Windows.Forms.Label();
             this.usernameBox = new System.Windows.Forms.ComboBox();
@@ -43,11 +44,16 @@
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.UninstallBtn = new System.Windows.Forms.Button();
             this.startBtn = new System.Windows.Forms.Button();
+            this.startContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.startServiceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.stopServiceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.startITunesInInteractiveModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.computerNameBox = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.InfoLbl = new System.Windows.Forms.Label();
             this.openITunes = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.startContextMenu.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -61,18 +67,19 @@
             // 
             // usernameBox
             // 
-            this.usernameBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.usernameBox.DropDownWidth = 180;
             this.usernameBox.FormattingEnabled = true;
-            this.usernameBox.Location = new System.Drawing.Point(175, 74);
+            this.usernameBox.Location = new System.Drawing.Point(180, 74);
             this.usernameBox.Name = "usernameBox";
             this.usernameBox.Size = new System.Drawing.Size(121, 21);
             this.usernameBox.TabIndex = 2;
-            this.usernameBox.MouseEnter += new System.EventHandler(this.comboBox1_MouseEnter);
-            this.usernameBox.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.usernameBox.SelectedIndexChanged += new System.EventHandler(this.OnUsernameBoxSelectedIndexChanged);
+            this.usernameBox.MouseEnter += new System.EventHandler(this.OnUsernameBoxMouseEnter);
+            this.usernameBox.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
             // 
             // iTunesPathBox
             // 
-            this.iTunesPathBox.Location = new System.Drawing.Point(175, 22);
+            this.iTunesPathBox.Location = new System.Drawing.Point(180, 22);
             this.iTunesPathBox.Name = "iTunesPathBox";
             this.iTunesPathBox.ReadOnly = true;
             this.iTunesPathBox.Size = new System.Drawing.Size(249, 20);
@@ -81,15 +88,15 @@
             // 
             // selectITunesExeBtn
             // 
-            this.selectITunesExeBtn.Location = new System.Drawing.Point(430, 19);
+            this.selectITunesExeBtn.Location = new System.Drawing.Point(435, 19);
             this.selectITunesExeBtn.Name = "selectITunesExeBtn";
             this.selectITunesExeBtn.Size = new System.Drawing.Size(75, 23);
             this.selectITunesExeBtn.TabIndex = 1;
             this.selectITunesExeBtn.Text = "Select";
             this.selectITunesExeBtn.UseVisualStyleBackColor = true;
-            this.selectITunesExeBtn.Click += new System.EventHandler(this.selectITunesExeBtn_Click);
-            this.selectITunesExeBtn.MouseEnter += new System.EventHandler(this.selectITunesExeBtn_MouseEnter);
-            this.selectITunesExeBtn.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.selectITunesExeBtn.Click += new System.EventHandler(this.OnSelectITunesExeBtnClick);
+            this.selectITunesExeBtn.MouseEnter += new System.EventHandler(this.OnSelectITunesExeBtnMouseEnter);
+            this.selectITunesExeBtn.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
             // 
             // openFileDialog1
             // 
@@ -107,9 +114,9 @@
             this.installBtn.TabIndex = 5;
             this.installBtn.Text = "Install Service";
             this.installBtn.UseVisualStyleBackColor = true;
-            this.installBtn.Click += new System.EventHandler(this.installBtn_Click);
-            this.installBtn.MouseEnter += new System.EventHandler(this.installBtn_MouseEnter);
-            this.installBtn.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.installBtn.Click += new System.EventHandler(this.OnInstallBtnClick);
+            this.installBtn.MouseEnter += new System.EventHandler(this.OnInstallBtnMouseEnter);
+            this.installBtn.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
             // 
             // label2
             // 
@@ -140,30 +147,30 @@
             // 
             // passwordBox2
             // 
-            this.passwordBox2.Location = new System.Drawing.Point(175, 127);
+            this.passwordBox2.Location = new System.Drawing.Point(180, 127);
             this.passwordBox2.Name = "passwordBox2";
             this.passwordBox2.PasswordChar = '●';
             this.passwordBox2.Size = new System.Drawing.Size(121, 20);
             this.passwordBox2.TabIndex = 4;
-            this.passwordBox2.KeyUp += new System.Windows.Forms.KeyEventHandler(this.passwordBox1_KeyUp);
-            this.passwordBox2.MouseEnter += new System.EventHandler(this.passwordBox2_MouseEnter);
-            this.passwordBox2.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.passwordBox2.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnPasswordBoxesKeyUp);
+            this.passwordBox2.MouseEnter += new System.EventHandler(this.OnPasswordBox2MouseEnter);
+            this.passwordBox2.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
             // 
             // passwordBox1
             // 
-            this.passwordBox1.Location = new System.Drawing.Point(175, 101);
+            this.passwordBox1.Location = new System.Drawing.Point(180, 101);
             this.passwordBox1.Name = "passwordBox1";
             this.passwordBox1.PasswordChar = '●';
             this.passwordBox1.Size = new System.Drawing.Size(121, 20);
             this.passwordBox1.TabIndex = 3;
-            this.passwordBox1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.passwordBox1_KeyUp);
-            this.passwordBox1.MouseEnter += new System.EventHandler(this.passwordBox1_MouseEnter);
-            this.passwordBox1.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.passwordBox1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnPasswordBoxesKeyUp);
+            this.passwordBox1.MouseEnter += new System.EventHandler(this.OnPasswordBox1MouseEnter);
+            this.passwordBox1.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
             // 
             // pictureBox1
             // 
             this.pictureBox1.Image = global::iTuneServiceManager.Properties.Resources.tick;
-            this.pictureBox1.Location = new System.Drawing.Point(314, 72);
+            this.pictureBox1.Location = new System.Drawing.Point(319, 72);
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.Size = new System.Drawing.Size(79, 75);
             this.pictureBox1.TabIndex = 10;
@@ -178,14 +185,15 @@
             this.UninstallBtn.TabIndex = 6;
             this.UninstallBtn.Text = "Uninstall Service";
             this.UninstallBtn.UseVisualStyleBackColor = true;
-            this.UninstallBtn.Click += new System.EventHandler(this.UninstallBtn_Click);
-            this.UninstallBtn.MouseEnter += new System.EventHandler(this.UninstallBtn_MouseEnter);
-            this.UninstallBtn.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.UninstallBtn.Click += new System.EventHandler(this.OnUninstallBtnClick);
+            this.UninstallBtn.MouseEnter += new System.EventHandler(this.OnUninstallBtnMouseEnter);
+            this.UninstallBtn.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
             // 
             // startBtn
             // 
             this.startBtn.BackColor = System.Drawing.Color.Transparent;
             this.startBtn.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.startBtn.ContextMenuStrip = this.startContextMenu;
             this.startBtn.Enabled = false;
             this.startBtn.Location = new System.Drawing.Point(349, 176);
             this.startBtn.Name = "startBtn";
@@ -193,28 +201,55 @@
             this.startBtn.TabIndex = 7;
             this.startBtn.Text = "Start";
             this.startBtn.UseVisualStyleBackColor = false;
-            this.startBtn.Click += new System.EventHandler(this.startBtn_Click);
-            this.startBtn.MouseEnter += new System.EventHandler(this.startBtn_MouseEnter);
-            this.startBtn.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.startBtn.Click += new System.EventHandler(this.OnStartBtnClick);
+            this.startBtn.MouseEnter += new System.EventHandler(this.OnStartBtnMouseEnter);
+            this.startBtn.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
+            // 
+            // startContextMenu
+            // 
+            this.startContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.startServiceToolStripMenuItem,
+            this.stopServiceToolStripMenuItem,
+            this.startITunesInInteractiveModeToolStripMenuItem});
+            this.startContextMenu.Name = "startContextMenu";
+            this.startContextMenu.Size = new System.Drawing.Size(242, 70);
+            // 
+            // startServiceToolStripMenuItem
+            // 
+            this.startServiceToolStripMenuItem.Name = "startServiceToolStripMenuItem";
+            this.startServiceToolStripMenuItem.Size = new System.Drawing.Size(241, 22);
+            this.startServiceToolStripMenuItem.Text = "Start Service";
+            // 
+            // stopServiceToolStripMenuItem
+            // 
+            this.stopServiceToolStripMenuItem.Name = "stopServiceToolStripMenuItem";
+            this.stopServiceToolStripMenuItem.Size = new System.Drawing.Size(241, 22);
+            this.stopServiceToolStripMenuItem.Text = "Stop Service";
+            // 
+            // startITunesInInteractiveModeToolStripMenuItem
+            // 
+            this.startITunesInInteractiveModeToolStripMenuItem.Name = "startITunesInInteractiveModeToolStripMenuItem";
+            this.startITunesInInteractiveModeToolStripMenuItem.Size = new System.Drawing.Size(241, 22);
+            this.startITunesInInteractiveModeToolStripMenuItem.Text = "Start iTunes in Interactive Mode";
             // 
             // computerNameBox
             // 
-            this.computerNameBox.Location = new System.Drawing.Point(175, 48);
+            this.computerNameBox.Location = new System.Drawing.Point(180, 48);
             this.computerNameBox.Name = "computerNameBox";
             this.computerNameBox.Size = new System.Drawing.Size(121, 20);
             this.computerNameBox.TabIndex = 2;
-            this.computerNameBox.Leave += new System.EventHandler(this.computerNameBox_Leave);
-            this.computerNameBox.MouseEnter += new System.EventHandler(this.computerNameBox_MouseEnter);
-            this.computerNameBox.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.computerNameBox.Leave += new System.EventHandler(this.OnControlsMouseLeave);
+            this.computerNameBox.MouseEnter += new System.EventHandler(this.OnComputerNameBoxMouseEnter);
+            this.computerNameBox.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
             // 
             // label5
             // 
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(40, 51);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(83, 13);
+            this.label5.Size = new System.Drawing.Size(134, 13);
             this.label5.TabIndex = 15;
-            this.label5.Text = "Computer Name";
+            this.label5.Text = "Domain or Computer Name";
             // 
             // InfoLbl
             // 
@@ -236,9 +271,9 @@
             this.openITunes.TabIndex = 8;
             this.openITunes.Text = "Run iTunes";
             this.openITunes.UseVisualStyleBackColor = true;
-            this.openITunes.Click += new System.EventHandler(this.openITunes_Click);
-            this.openITunes.MouseEnter += new System.EventHandler(this.openITunes_MouseEnter);
-            this.openITunes.MouseLeave += new System.EventHandler(this.ITunes_MouseLeave);
+            this.openITunes.Click += new System.EventHandler(this.OnOpenITunesClick);
+            this.openITunes.MouseEnter += new System.EventHandler(this.OnOpenITunesMouseEnter);
+            this.openITunes.MouseLeave += new System.EventHandler(this.OnControlsMouseLeave);
             // 
             // MainForm
             // 
@@ -270,8 +305,9 @@
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "iTuneServer Service Installer";
-            this.Load += new System.EventHandler(this.Form1_Load);
+            this.Load += new System.EventHandler(this.OnLoad);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.startContextMenu.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -297,6 +333,10 @@
         public System.Windows.Forms.TextBox iTunesPathBox;
         private System.Windows.Forms.Label InfoLbl;
         public System.Windows.Forms.Button openITunes;
+        private System.Windows.Forms.ContextMenuStrip startContextMenu;
+        private System.Windows.Forms.ToolStripMenuItem startServiceToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem startITunesInInteractiveModeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem stopServiceToolStripMenuItem;
     }
 }
 

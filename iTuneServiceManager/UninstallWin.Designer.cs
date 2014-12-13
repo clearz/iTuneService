@@ -43,7 +43,7 @@
             this.UninstalliTuneServiceLbl.ForeColor = System.Drawing.SystemColors.Highlight;
             this.UninstalliTuneServiceLbl.Location = new System.Drawing.Point(44, 65);
             this.UninstalliTuneServiceLbl.Name = "UninstalliTuneServiceLbl";
-            this.UninstalliTuneServiceLbl.Size = new System.Drawing.Size(189, 17);
+            this.UninstalliTuneServiceLbl.Size = new System.Drawing.Size(219, 17);
             this.UninstalliTuneServiceLbl.TabIndex = 2;
             this.UninstalliTuneServiceLbl.Text = "●  Uninstalling iTuneServer Service";
             // 
@@ -54,7 +54,7 @@
             this.StoppingiTuneServiceLbl.ForeColor = System.Drawing.SystemColors.Highlight;
             this.StoppingiTuneServiceLbl.Location = new System.Drawing.Point(44, 30);
             this.StoppingiTuneServiceLbl.Name = "StoppingiTuneServiceLbl";
-            this.StoppingiTuneServiceLbl.Size = new System.Drawing.Size(175, 17);
+            this.StoppingiTuneServiceLbl.Size = new System.Drawing.Size(205, 17);
             this.StoppingiTuneServiceLbl.TabIndex = 3;
             this.StoppingiTuneServiceLbl.Text = "●  Stopping iTuneServer Service";
             // 
@@ -84,14 +84,14 @@
             // 
             // SuccessLbl
             // 
-            this.SuccessLbl.AutoSize = true;
             this.SuccessLbl.Font = new System.Drawing.Font("Century Gothic", 14F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Underline))), System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.SuccessLbl.ForeColor = System.Drawing.SystemColors.Highlight;
-            this.SuccessLbl.Location = new System.Drawing.Point(272, 100);
+            this.SuccessLbl.Location = new System.Drawing.Point(186, 100);
             this.SuccessLbl.Name = "SuccessLbl";
-            this.SuccessLbl.Size = new System.Drawing.Size(98, 23);
+            this.SuccessLbl.Size = new System.Drawing.Size(184, 23);
             this.SuccessLbl.TabIndex = 8;
             this.SuccessLbl.Text = "SUCCESS!";
+            this.SuccessLbl.TextAlign = System.Drawing.ContentAlignment.TopRight;
             this.SuccessLbl.Visible = false;
             // 
             // UninstallWin
@@ -113,6 +113,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Uninstalling...";
             this.TopMost = true;
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.OnFormClosed);
             this.ResumeLayout(false);
             this.PerformLayout();
 

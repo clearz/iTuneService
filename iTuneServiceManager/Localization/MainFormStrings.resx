@@ -117,8 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ACTION_START" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="ACTION_STOP" xml:space="preserve">
+    <value>Stop</value>
+  </data>
   <data name="INFO_LABEL_COMPUTER" xml:space="preserve">
-    <value>The name of the computer on the local network.</value>
+    <value>The domain or name of the computer of the service user.</value>
   </data>
   <data name="INFO_LABEL_DEFAULT" xml:space="preserve">
     <value>iTuneServer Windows Service manager - github.com/clearz/iTuneService</value>
@@ -127,7 +133,7 @@
     <value>Installs and starts the iTuneServer Windows Service.</value>
   </data>
   <data name="INFO_LABEL_OPEN" xml:space="preserve">
-    <value>Run the iTuneServer Application (Only if service is stopped or not installed)</value>
+    <value>Run iTunes using service credentials (Only if service is stopped)</value>
   </data>
   <data name="INFO_LABEL_PASS" xml:space="preserve">
     <value>The password for the Windows account selected above.</value>

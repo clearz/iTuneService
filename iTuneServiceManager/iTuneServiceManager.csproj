@@ -22,6 +22,8 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -34,10 +36,8 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -69,6 +69,9 @@
     <ApplicationManifest>Misc\iTuneServiceManager.exe.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CredentialManagement">
+      <HintPath>..\packages\CredentialManagement.1.0.1\lib\net35\CredentialManagement.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Configuration.Install" />
@@ -100,6 +103,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DomainAuthCredentials.cs" />
     <Compile Include="Encryption.cs" />
     <Compile Include="Localization\MainFormStrings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -149,6 +153,7 @@
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="Misc\iTuneServiceManager.exe.manifest" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -190,7 +195,14 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y "$(SolutionDir)iTuneService\$(OutDir)*.*" "$(TargetDir)"</PostBuildEvent>
+    <PostBuildEvent>call sstate.bat&amp;erase sstate.bat
+copy /y "$(SolutionDir)iTuneService\$(OutDir)*.*" "$(TargetDir)"
+if defined ITSRunning net start "iTuneServer Service"</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>sc query "iTuneServer Service"|findstr /l "RUNNING"
+if not errorlevel 1 (echo set ITSRunning=Y&gt;sstate.bat&amp;net stop "iTuneServer Service") else (echo set ITSState=&gt;sstate.bat&amp;cmd /c "exit /b 0")
+</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
