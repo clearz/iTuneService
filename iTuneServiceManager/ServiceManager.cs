@@ -51,8 +51,24 @@ namespace iTuneServiceManager
 
         #region DLLImports
 
+        /// <remarks>
+        /// See: http://www.pinvoke.net/default.aspx/advapi32.logonuser
+        /// </remarks>
+        public enum LogonType
+        {
+            // ReSharper disable InconsistentNaming
+            LOGON32_LOGON_INTERACTIVE = 2,
+            LOGON32_LOGON_NETWORK = 3,
+            LOGON32_LOGON_BATCH = 4,
+            LOGON32_LOGON_SERVICE = 5,
+            LOGON32_LOGON_UNLOCK = 7,
+            LOGON32_LOGON_NETWORK_CLEARTEXT = 8, // Win2K or higher
+            LOGON32_LOGON_NEW_CREDENTIALS = 9 // Win2K or higher
+            // ReSharper restore InconsistentNaming
+        };
+
         [DllImport("advapi32.dll", SetLastError = true)]
-        public static extern bool LogonUser(string lpszUsername, string lpszDomain, string lpszPassword, int dwLogonType, int dwLogonProvider, out IntPtr phToken);
+        public static extern bool LogonUser(string lpszUsername, string lpszDomain, string lpszPassword, LogonType dwLogonType, int dwLogonProvider, out IntPtr phToken);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         public static extern bool CloseHandle(IntPtr handle);
@@ -115,7 +131,7 @@ namespace iTuneServiceManager
 
             try
             {
-                if (!LogonUser(credentials.Username, credentials.Domain, credentials.Password, 4, 0, out loginToken))
+                if (!LogonUser(credentials.Username, credentials.Domain, credentials.Password, LogonType.LOGON32_LOGON_NETWORK, 0, out loginToken))
                 {
                     Logger.Log("Error while authenticating user: " + new Win32Exception(Marshal.GetLastWin32Error()));
                     return false;
