@@ -347,19 +347,29 @@ namespace iTuneServiceManager
         }
         private void OnOpenITunesClick(object sender, EventArgs e)
         {
-            if (iTunesPathBox.Text == "") OnSelectITunesExeBtnClick(sender, e);
-            if (iTunesPathBox.Text == "") return;
-            var p = new Process();
-            if (_setupComplete)
+            if (!_setupComplete)
             {
-                var creds = CurrentCredentials;
-                p.StartInfo.Domain = creds.Domain;
-                p.StartInfo.UserName = creds.Username;
-                p.StartInfo.Password = creds.GetPasswordAsSecureString();
+                MessageBox.Show(this,
+                                "There is not enough information to run iTunes. Please uninstall and reinstall the service.",
+                                "Not Enough Information",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                return;
             }
+
+            var p = new Process();
+            
+            var creds = CurrentCredentials;
+            p.StartInfo.Domain = creds.Domain;
+            p.StartInfo.UserName = creds.Username;
+            p.StartInfo.Password = creds.GetPasswordAsSecureString();
+
             p.StartInfo.FileName = iTunesPathBox.Text;
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.WorkingDirectory = Path.GetDirectoryName(iTunesPathBox.Text);
+            p.StartInfo.ErrorDialog = true;
+            p.StartInfo.LoadUserProfile = true;
+
             p.Start();
         }
 
