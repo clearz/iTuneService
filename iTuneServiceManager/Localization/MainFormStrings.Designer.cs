@@ -97,6 +97,15 @@ namespace iTuneServiceManager.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Empty the Recycle Bin of the service user..
+        /// </summary>
+        internal static string INFO_LABEL_EMPTY_RECYCLE_BIN {
+            get {
+                return ResourceManager.GetString("INFO_LABEL_EMPTY_RECYCLE_BIN", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Installs and starts the iTuneServer Windows Service..
         /// </summary>
         internal static string INFO_LABEL_INSTALL {

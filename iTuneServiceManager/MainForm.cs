@@ -199,6 +199,7 @@ namespace iTuneServiceManager
                     startBtn.Enabled = false;
                     startBtn.Text = MainFormStrings.ACTION_START;
                     openITunes.Enabled = false;
+                    emptyRecycleBinButton.Enabled = false;
                     if (state == ServiceManager.State.Setup) CheckSetupComplete();
                     break;
                 case ServiceManager.State.Installing:
@@ -214,6 +215,7 @@ namespace iTuneServiceManager
                     startBtn.Enabled = false;
                     startBtn.Text = MainFormStrings.ACTION_START;
                     openITunes.Enabled = false;
+                    emptyRecycleBinButton.Enabled = false;
                     break;
                 case ServiceManager.State.ServiceRunning:
                     selectITunesExeBtn.Enabled = false;
@@ -227,6 +229,7 @@ namespace iTuneServiceManager
                     startBtn.Enabled = true;
                     startBtn.Text = MainFormStrings.ACTION_STOP;
                     openITunes.Enabled = false;
+                    emptyRecycleBinButton.Enabled = true;
                     break;
                 case ServiceManager.State.ServiceStopped:
                     selectITunesExeBtn.Enabled = false;
@@ -240,6 +243,7 @@ namespace iTuneServiceManager
                     startBtn.Enabled = true;
                     startBtn.Text = MainFormStrings.ACTION_START;
                     openITunes.Enabled = true;
+                    emptyRecycleBinButton.Enabled = true;
                     break;
                 default:
                     if (Debugger.IsAttached) Debugger.Break();
@@ -418,7 +422,76 @@ namespace iTuneServiceManager
         {
             InfoLbl.Text = MainFormStrings.INFO_LABEL_OPEN;
         }
+        private void OnEmptyRecycleBinButtonMouseEnter(object sender, EventArgs e)
+        {
+            InfoLbl.Text = MainFormStrings.INFO_LABEL_EMPTY_RECYCLE_BIN;
+        }
 
         #endregion
+
+        private void OnEmptyRecycleBinButtonClick(object sender, EventArgs e)
+        {
+            if (!_setupComplete)
+            {
+                MessageBox.Show(this,
+                                "All information must be entered to be able to empty the given user's recycle bin.",
+                                "Not Enough Information",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+                return;
+            }
+
+            var p = new Process();
+
+            var creds = CurrentCredentials;
+            p.StartInfo.Domain = creds.Domain;
+            p.StartInfo.UserName = creds.Username;
+            p.StartInfo.Password = creds.GetPasswordAsSecureString();
+
+            p.StartInfo.FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EmptyRecycleBin.exe");
+            p.StartInfo.Arguments = EmptyRecycleBin.Program.EmptyCommand;
+            p.StartInfo.WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.ErrorDialog = true;
+            p.StartInfo.LoadUserProfile = true;
+
+            p.Start();
+
+            p.WaitForExit(20000);
+            if (p.HasExited)
+            {
+                if (p.ExitCode != 0)
+                {
+                    MessageBox.Show(this,
+                                    string.Format("Emptying the recycle bin gave a funny return code ({0:x8}) and may not have worked correctly.", p.ExitCode),
+                                    "Error",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error);
+                }
+                else
+                {
+                    MessageBox.Show(this,
+                                    "Successfully emptied the recycle bin!",
+                                    "Success",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Information);
+
+                }
+            }
+            else
+            {
+                try { p.Kill(); }
+                catch (Exception ex)
+                {
+                    _logger.Log(ex);
+                }
+                MessageBox.Show(this,
+                                "Timed out waiting for the recycle bin to empty.",
+                                "Error",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
+
+            }
+        }
     }
 }

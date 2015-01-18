@@ -193,6 +193,15 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EmptyRecycleBin\EmptyRecycleBin.csproj">
+      <Project>{b3bf1a40-fc72-4d29-8113-427dbae06279}</Project>
+      <Name>EmptyRecycleBin</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Misc\RecycleBin.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>call sstate.bat&amp;erase sstate.bat

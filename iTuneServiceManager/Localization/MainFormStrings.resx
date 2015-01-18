@@ -129,6 +129,9 @@
   <data name="INFO_LABEL_DEFAULT" xml:space="preserve">
     <value>iTuneServer Windows Service manager - github.com/clearz/iTuneService</value>
   </data>
+  <data name="INFO_LABEL_EMPTY_RECYCLE_BIN" xml:space="preserve">
+    <value>Empty the Recycle Bin of the service user.</value>
+  </data>
   <data name="INFO_LABEL_INSTALL" xml:space="preserve">
     <value>Installs and starts the iTuneServer Windows Service.</value>
   </data>
