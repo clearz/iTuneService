@@ -209,7 +209,9 @@ copy /y "$(SolutionDir)iTuneService\$(OutDir)*.*" "$(TargetDir)"
 if defined ITSRunning net start "iTuneServer Service"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>sc query "iTuneServer Service"|findstr /l "RUNNING"
+    <PreBuildEvent>rem   IF YOU GET AN ERROR IN THE FOLLOWING,
+rem   YOU MUST RUN VISUAL STUDIO AS ADMIN
+sc query "iTuneServer Service"|findstr /l "RUNNING"
 if not errorlevel 1 (echo set ITSRunning=Y&gt;sstate.bat&amp;net stop "iTuneServer Service") else (echo set ITSState=&gt;sstate.bat&amp;cmd /c "exit /b 0")
 </PreBuildEvent>
   </PropertyGroup>
