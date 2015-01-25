@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?define ProductVersion="1.0.0.0" ?>
+<?define UpgradeCode="c7af957a-439f-4a63-9089-47ea7744d3e1" ?>
+<?define Manufacturer="iTuneService" ?>
+<?define ProductName="iTuneService" ?>
+<?define SkuName="iTuneService" ?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <Product
+    Id="*"
+    Name="$(var.ProductName)"
+    Language="1033"
+    Version="$(var.ProductVersion)"
+    Manufacturer="$(var.Manufacturer)"
+    UpgradeCode="$(var.UpgradeCode)">
+    
+    <Package 
+      InstallerVersion="200" 
+      Compressed="yes" 
+      InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+
+    <!-- Set options for advanced UI -->
+    <Property Id="ApplicationFolderName" Value="$(var.ProductName)" />  <!-- Default install folder -->
+    <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+    <WixVariable Id="WixUISupportPerUser" Value="0" />
+
+    <!-- Set up to launch service manager at end of install -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch iTuneService Manager" />
+    <Property Id="WixShellExecTarget" Value="[#iTuneServiceManager.exe]" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+    
+    <UI>
+      <UIRef Id="WixUI_Advanced" />
+
+      <!-- Display UI to launch service manager at the end -->
+      <Publish Dialog="ExitDialog"
+               Control="Finish"
+               Event="DoAction"
+               Value="LaunchApplication">
+        WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed
+      </Publish>
+    </UI>
+
+    <!-- Set up directories used -->
+ 		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="APPLICATIONFOLDER" />
+			</Directory>
+      <Directory Id="ProgramMenuFolder">
+          <Directory Id="ApplicationProgramsFolder" Name="$(var.ProductName)"/>
+      </Directory>
+		</Directory>
+
+    <!-- Cobble together components to make up the main product -->
+		<Feature Id="ProductFeature" Title="$(var.ProductName)" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="CleanupMainApplicationFolder" />
+		</Feature>
+
+    <!-- Main Product Components -->
+    <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
+      <!-- iTuneService -->
+      <Component Id="ServiceEXE">
+        <File Source="$(var.iTuneService.TargetPath)" />
+        <ServiceControl Id="iTuneService_ServiceControl" Name="iTuneServer Service" Remove="uninstall" Stop="uninstall" Wait="yes" />
+      </Component>
+
+      <!-- iTuneServiceManager -->
+      <Component Id="ServiceManagerEXE">
+        <File Source="$(var.iTuneServiceManager.TargetPath)" />
+      </Component>
+      <Component Id="ServiceManagerConfig">
+        <File Source="$(var.iTuneServiceManager.TargetPath).config" />
+      </Component>
+      <Component Id="CredentialManagementPackage">
+        <File Source="$(var.iTuneServiceManager.TargetDir)CredentialManagement.dll" />
+      </Component>
+      
+      <!-- EmptyRecycleBin -->
+      <Component Id="EmptyRecycleBinEXE">
+        <File Source="$(var.EmptyRecycleBin.TargetPath)" />
+      </Component>
+    </ComponentGroup>
+    
+    <!-- Application Shortcuts -->
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="052f6069-98db-4293-aa2f-da873ed115a8">
+        
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="Manage iTuneService"
+                  Description="Runs the iTuneService management application."
+                  Target="[#iTuneServiceManager.exe]"
+                  WorkingDirectory="APPLICATIONROOTDIRECTORY" />
+        <Shortcut Id="UninstallProduct"
+                  Name="Uninstall"
+                  Target="[SystemFolder]msiexec.exe"
+                  Arguments="/x [ProductCode]"
+                  Description="Stops the running service and uninstalls iTuneService." />
+        
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\$(var.SkuName)" Name="installed" Type="integer" Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- 
+      RemoveFolderEx requires that we "remember" the path for uninstall.
+      Read the path value and set the APPLICATIONFOLDER property with the value.
+      See: http://www.hass.de/content/wix-how-use-removefolderex-your-xml-scripts
+    -->
+    <Property Id="APPLICATIONFOLDER">
+      <RegistrySearch Key="SOFTWARE\$(var.SkuName)" Root="HKLM" Type="raw" Id="APPLICATIONFOLDER_REGSEARCH" Name="Path" />
+    </Property>
+    <DirectoryRef Id="APPLICATIONFOLDER">
+      <Component Id="CleanupMainApplicationFolder" Guid="*">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\$(var.SkuName)" Name="Path" Type="string" Value="[APPLICATIONFOLDER]" KeyPath="yes" />
+        <!-- We need to use APPLICATIONFOLDER variable here or RemoveFolderEx will not remove on "install". -->
+        <util:RemoveFolderEx On="uninstall" Property="APPLICATIONFOLDER" />
+      </Component>
+    </DirectoryRef>
+  
+	</Product>
+
+</Wix>
