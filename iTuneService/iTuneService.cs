@@ -12,6 +12,8 @@ namespace iTuneService
     {
         public const string PublicServiceName = "iTuneServer Service";
 
+        private static Logger _log = Logger.Instance;
+
         Process _iTunesProcess;
         string _iTunesFileName;
 
@@ -39,15 +41,15 @@ namespace iTuneService
             _iTunesProcess.StartInfo.FileName = _iTunesFileName;
             _iTunesProcess.Start();
 
-            Log.Write("iTuneServer: Service Starting");
-            Log.Write("Starting Process: " + _iTunesFileName);
+            _log.Write("iTuneServer: Service Starting");
+            _log.Write("Starting Process: " + _iTunesFileName);
             
             Thread.Sleep(50);
 
             if (!_iTunesProcess.HasExited)
             {
-                Log.Write("Process: '" + _iTunesFileName + "' has started with a pid of " + _iTunesProcess.Id);
-                Log.Write("iTuneServer: Service Started");
+                _log.Write("Process: '" + _iTunesFileName + "' has started with a pid of " + _iTunesProcess.Id);
+                _log.Write("iTuneServer: Service Started");
             }
 
             base.OnStart(args);
@@ -55,14 +57,14 @@ namespace iTuneService
 
         protected override void OnStop()
         {
-            Log.Write("iTuneServer: Service Stopping");
-            Log.Write("Shutting down Process: '" + _iTunesFileName + "', PID: " + _iTunesProcess.Id);
+            _log.Write("iTuneServer: Service Stopping");
+            _log.Write("Shutting down Process: '" + _iTunesFileName + "', PID: " + _iTunesProcess.Id);
             _iTunesProcess.Kill();
             Thread.Sleep(50);
             if (_iTunesProcess.HasExited)
             {
-                Log.Write("Process: '" + _iTunesFileName + "' has exited");
-                Log.Write("iTuneServer: Service Stopped");
+                _log.Write("Process: '" + _iTunesFileName + "' has exited");
+                _log.Write("iTuneServer: Service Stopped");
             }
 
             base.OnStop();

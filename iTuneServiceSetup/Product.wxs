@@ -82,7 +82,12 @@
       <Component Id="CredentialManagementPackage">
         <File Source="$(var.iTuneServiceManager.TargetDir)CredentialManagement.dll" />
       </Component>
-      
+
+      <!-- Common Library -->
+      <Component Id="CommonDLL">
+        <File Source="$(var.Common.TargetPath)" />
+      </Component>
+
       <!-- EmptyRecycleBin -->
       <Component Id="EmptyRecycleBinEXE">
         <File Source="$(var.EmptyRecycleBin.TargetPath)" />

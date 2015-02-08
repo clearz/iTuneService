@@ -98,5 +98,62 @@ namespace Common
         public const int DESIRED_ACCESS_MASK = 0x1fff;
 
         #endregion
+
+        #region For Use During Service Install
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern IntPtr OpenSCManager(string lpMachineName,
+                                                  string lpDatabaseName,
+                                                  uint dwDesiredAccess);
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern IntPtr OpenService(IntPtr hSCManager,
+                                                string lpServiceName,
+                                                uint dwDesiredAccess);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct QUERY_SERVICE_CONFIG
+        {
+            public uint dwServiceType;
+            public uint dwStartType;
+            public uint dwErrorControl;
+            public string lpBinaryPathName;
+            public string lpLoadOrderGroup;
+            public uint dwTagId;
+            public string lpDependencies;
+            public string lpServiceStartName;
+            public string lpDisplayName;
+        }
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool QueryServiceConfig(IntPtr hService,
+                                                     IntPtr lpServiceConfig,
+                                                     uint cbBufSize,
+                                                     out uint pcbBytesNeeded);
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ChangeServiceConfig(IntPtr hService,
+                                                      uint dwServiceType,
+                                                      uint dwStartType,
+                                                      uint dwErrorControl,
+                                                      string lpBinaryPathName,
+                                                      string lpLoadOrderGroup,
+                                                      IntPtr lpdwTagId,
+                                                      string lpDependencies,
+                                                      string lpServiceStartName,
+                                                      string lpPassword,
+                                                      string lpDisplayName);
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseServiceHandle(IntPtr hSCObject);
+
+        public const uint SERVICE_NO_CHANGE = 0xffffffffu;
+        public const uint SC_MANAGER_ALL_ACCESS = 0xf003fu;
+        public const uint SERVICE_ALL_ACCESS = 0xf01ffu;
+
+        #endregion
     }
 }

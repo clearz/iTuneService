@@ -82,7 +82,6 @@
     <Compile Include="iTuneServiceInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Log.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

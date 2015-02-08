@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ServiceProcess;
 using System.Text;
+using Common;
 
 namespace iTuneService
 {
@@ -12,7 +13,8 @@ namespace iTuneService
         /// </summary>
         static void Main(String[] args)
         {
-            Log.Write("Args.Length: " + args.Length);
+            Logger.Instance.WriteToConsole = true;
+            Logger.Instance.Write("Args.Length: " + args.Length);
             var servicesToRun = new ServiceBase[] 
             { 
                 new iTuneService(args[0]) 

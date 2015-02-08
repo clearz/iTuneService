@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Threading;
 using System.IO;
+using System.ServiceProcess;
 using System.Windows.Forms;
 using Common;
 
@@ -15,7 +16,7 @@ namespace iTuneServiceManager
 {
 	public partial class InstallWin : Form
 	{
-		private readonly Logger _logger = Logger.GetLogger(writeToConsole: true);
+		private readonly Logger _logger = Logger.Instance;
 
 	    private MainForm _mainForm;
 	    private readonly DomainAuthCredentials _credentials;
@@ -137,27 +138,26 @@ namespace iTuneServiceManager
 
 		public void InstalliTuneService()
 		{
-            var iTunesPath = "/ITunesPath=" + _mainForm.iTunesPathBox.Text;
-            var userNameArg = "/UserName=" + _credentials.ToFullUsername();
+            var iTunesPath = string.Format("/{0}={1}", Constants.ITunesPathContextArg, _mainForm.iTunesPathBox.Text);
+            var userNameArg = string.Format("/{0}={1}", Constants.UserNameContextArg, _credentials.ToFullUsername());
 
-            // Encrypt password for transfer using today's date as a long string for the password
-            var passwordArg = "/EncryptedPassword=" + Encryption.Encrypt(_credentials.Password, DateTime.Now.ToLongDateString());
+            Credentials.PersistCredentials(_credentials.ToFullUsername(), _credentials.Password);
 
             _logger.Log("InstallWin.InstalliTuneService() Enter");
 		    _logger.Log(iTunesPath);
 		    _logger.Log(userNameArg);
-		    _logger.Log(passwordArg);
 		    
             var installArgs = new[]
 		    {
 		        iTunesPath,
 		        userNameArg,
-		        passwordArg,
 		        "./iTuneService.exe"
 		    };
 			ServiceManager.Install(installArgs);
 
-            Credentials.PersistCredentials(_credentials.ToFullUsername(), _credentials.Password);
+            ServiceManager.CurrentState = Service.ServiceStatus == ServiceControllerStatus.Stopped
+                                                      ? ServiceManager.State.ServiceStopped
+                                                      : ServiceManager.State.ServiceRunning;
         }
 
 		public void StartiTuneService()

@@ -55,6 +55,9 @@ namespace Common
 						sw.WriteLine(logStr);
 
 				Instance = new Logger();
+
+                // Default to writing to console
+			    Instance.WriteToConsole = true;
 			}
 
 			public void Log(string msg, LogEvent eventType = LogEvent.Info, [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null)

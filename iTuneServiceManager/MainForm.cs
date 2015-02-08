@@ -11,7 +11,7 @@ namespace iTuneServiceManager
 {
     public partial class MainForm : Form
     {
-		private readonly Logger _logger = Logger.GetLogger(writeToConsole: true);
+		private readonly Logger _logger = Logger.Instance;
 
         private bool _setupComplete = false;
 

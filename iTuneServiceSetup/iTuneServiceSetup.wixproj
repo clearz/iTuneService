@@ -24,6 +24,14 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Name>Common</Name>
+      <Project>{f343e2fa-301e-42c9-a8ea-f1a8e1ef097d}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\EmptyRecycleBin\EmptyRecycleBin.csproj">
       <Name>EmptyRecycleBin</Name>
       <Project>{b3bf1a40-fc72-4d29-8113-427dbae06279}</Project>

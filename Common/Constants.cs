@@ -10,5 +10,8 @@ namespace Common
     {
         public const string ServiceName = "iTuneServer Service";
         public const string CredentialName = "iTuneServer Service Account";
+
+        public const string UserNameContextArg = "UserName";
+        public const string ITunesPathContextArg = "ITunesPath";
     }
 }
