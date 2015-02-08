@@ -1,20 +1,9 @@
 ﻿using System;
-using System.Threading;
-using System.Diagnostics;
-using System.IO;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using System.Management;
-using System.Web;
-using System.DirectoryServices;
-using System.DirectoryServices.AccountManagement;
-using System.Runtime.InteropServices;
 using System.ServiceProcess;
+using System.Threading;
+using System.Windows.Forms;
+using Common;
 
 namespace iTuneServiceManager
 {
@@ -104,16 +93,16 @@ namespace iTuneServiceManager
 
         public void StopiTuneService()
         {
-            if (ServiceManager.ServiceStatus == ServiceControllerStatus.Running)
+            if (Service.ServiceStatus == ServiceControllerStatus.Running)
             {
-                ServiceManager.StopService(ServiceManager.ServiceName);
+                ServiceManager.StopService();
             }
         }
 
         public void UninstalliTuneService()
         {
             ServiceManager.Uninstall();
-            ServiceManager.RemoveCredential();
+            Credentials.RemoveCredential();
         }
     }
 }

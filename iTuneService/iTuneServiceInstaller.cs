@@ -6,7 +6,7 @@ using System.ServiceProcess;
 using System.Runtime.InteropServices;
 using System.Collections;
 using System.Security.Cryptography; 
-
+using Common;
 
 namespace iTuneService
 {
@@ -45,14 +45,14 @@ namespace iTuneService
             _parameters = "\"" + Context.Parameters["ITunesPath"]  + "\"";
 
             // Configure ServiceName
-            _serviceInstaller.DisplayName = iTuneService.PublicServiceName;
+            _serviceInstaller.DisplayName = Constants.ServiceName;
             _serviceInstaller.StartType = ServiceStartMode.Automatic;
-            _serviceInstaller.ServiceName = iTuneService.PublicServiceName;
+            _serviceInstaller.ServiceName = Constants.ServiceName;
         }
 
         void ProjectInstaller_BeforeUninstall(object sender, InstallEventArgs e)
         {
-            _serviceInstaller.ServiceName = iTuneService.PublicServiceName;
+            _serviceInstaller.ServiceName = Constants.ServiceName;
         }
 
         public override void Install(IDictionary stateSaver)

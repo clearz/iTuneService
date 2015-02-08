@@ -1,20 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using System.Management;
-using System.Web;
-using System.DirectoryServices;
-using System.DirectoryServices.AccountManagement;
-using System.Runtime.InteropServices;
-using System.Security;
 using System.ServiceProcess;
+using System.Windows.Forms;
+using Common;
 using iTuneServiceManager.Localization;
 
 namespace iTuneServiceManager
@@ -57,13 +47,13 @@ namespace iTuneServiceManager
             string programFilesDir;
             if ((programFilesDir = Environment.GetEnvironmentVariable("ProgramFiles(x86)")) == null) programFilesDir = Environment.GetEnvironmentVariable("ProgramFiles");
 
-            var savedCreds = ServiceManager.RetrieveCredential();
+            var savedCreds = Credentials.RetrieveCredential();
             var startDomain = Environment.MachineName;
             var startUser = Environment.UserName;
             var startPassword = string.Empty;
 
             // See who's running the current service and look up his credentials if possible
-            var currentUser = ServiceManager.GetServiceUsername();
+            var currentUser = Service.GetServiceUsername();
             if (currentUser != null)
             {
                 startDomain = currentUser.Domain == "." ? Environment.MachineName : currentUser.Domain;
@@ -74,7 +64,7 @@ namespace iTuneServiceManager
                 }
                 else
                 {
-                    if (savedCreds != null) ServiceManager.RemoveCredential();
+                    if (savedCreds != null) Credentials.RemoveCredential();
                     startPassword = string.Empty;
                 }
             }
@@ -82,15 +72,7 @@ namespace iTuneServiceManager
             _logger.Log("programFilesDir: " + programFilesDir);
             
             // Get list of installed users for our combobox
-            var localCreds = new List<DomainAuthCredentials>();
-            var query = new SelectQuery("Win32_UserAccount");
-            using (var searcher = new ManagementObjectSearcher(query))
-            {
-                foreach (ManagementObject envVar in searcher.Get())
-                {
-                    localCreds.Add(new DomainAuthCredentials(Environment.MachineName + "\\" + envVar["Name"], null));
-                }
-            }
+            var localCreds = DomainAuthCredentials.GetLocalUsers();
             
             // Add list to combobox and select start user if there
             usernameBox.Items.AddRange(localCreds.ToArray());
@@ -136,11 +118,11 @@ namespace iTuneServiceManager
             }
 
             // Check to see if service is installed / running
-            if (ServiceManager.IsServiceInstalled)
+            if (Service.IsServiceInstalled)
             {
                 try
                 {
-                    var serviceStatus = ServiceManager.ServiceStatus;
+                    var serviceStatus = Service.ServiceStatus;
                     _logger.Log("Service Status: " + serviceStatus);
 
                     ServiceManager.CurrentState = serviceStatus == ServiceControllerStatus.Stopped
@@ -284,16 +266,8 @@ namespace iTuneServiceManager
             Visible = false;
 
             var box = new InstallWin(this, CurrentCredentials) { Visible = true, Owner = this };
-            IntPtr hmenu = Win32.GetSystemMenu(box.Handle, 0);
-            int cnt = Win32.GetMenuItemCount(hmenu);
 
-            // remove 'close' action
-            Win32.RemoveMenu(hmenu, cnt - 1, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
-
-            // remove extra menu line
-            Win32.RemoveMenu(hmenu, cnt - 2, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
-
-            Win32.DrawMenuBar(box.Handle);
+            HideTitleBarItems(box.Handle);
         }
         private void OnUninstallBtnClick(object sender, EventArgs e)
         {
@@ -302,17 +276,22 @@ namespace iTuneServiceManager
                 Visible = false;
 
                 var box = new UninstallWin(this) {Owner = this, Visible = true};
-	            IntPtr hmenu = Win32.GetSystemMenu(box.Handle, 0);
-                int cnt = Win32.GetMenuItemCount(hmenu);
 
-                // remove 'close' action
-	            Win32.RemoveMenu(hmenu, cnt - 1, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
-
-                // remove extra menu line
-	            Win32.RemoveMenu(hmenu, cnt - 2, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
-
-	            Win32.DrawMenuBar(box.Handle);
+                HideTitleBarItems(box.Handle);
             }
+        }
+        private static void HideTitleBarItems(IntPtr windowHandle)
+        {
+            IntPtr hmenu = Win32.GetSystemMenu(windowHandle, 0);
+            int cnt = Win32.GetMenuItemCount(hmenu);
+
+            // remove 'close' action
+            Win32.RemoveMenu(hmenu, cnt - 1, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
+
+            // remove extra menu line
+            Win32.RemoveMenu(hmenu, cnt - 2, Win32.MF_DISABLED | Win32.MF_BYPOSITION);
+
+            Win32.DrawMenuBar(windowHandle);
         }
         
         private void OnStartBtnClick(object sender, EventArgs e)
@@ -327,12 +306,12 @@ namespace iTuneServiceManager
                 {
                     if (shouldStart)
                     {
-                        ServiceManager.StartService(ServiceManager.ServiceName);
+                        ServiceManager.StartService();
                         InfoLbl.Text = "The iTuneServer Service is now running";
                     }
                     else
                     {
-                        ServiceManager.StopService(ServiceManager.ServiceName);
+                        ServiceManager.StopService();
                         InfoLbl.Text = "The iTuneServer Service has stopped running";
                     }
                     break;

@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace iTuneServiceManager
+namespace Common
 {
 		public class Logger
 		{

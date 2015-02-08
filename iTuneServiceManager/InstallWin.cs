@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Threading;
 using System.IO;
 using System.Windows.Forms;
+using Common;
 
 //del $(OutDir)iTuneServiceManager.pdb
 //del $(OutDir)iTuneServiceManager.exe.config
@@ -112,7 +113,7 @@ namespace iTuneServiceManager
 		{
             _logger.Log("ValidateUserCredentials" + _credentials.Domain);
 
-            var isValid = ServiceManager.AuthenticateUser(_credentials);
+            var isValid = Service.AuthenticateUser(_credentials);
 			if ( !isValid )
 			{
                 _logger.Log("Throwing IOException: The given password does not match the user " + _credentials.ToFullUsername());
@@ -126,7 +127,7 @@ namespace iTuneServiceManager
 		{
 			try
 			{
-                Permission.SetRight(_credentials, "SeServiceLogonRight");
+                Credentials.SetLogonAsServicePrivilege(_credentials);
 			}
 			catch ( Exception exception )
 			{
@@ -156,12 +157,12 @@ namespace iTuneServiceManager
 		    };
 			ServiceManager.Install(installArgs);
 
-            ServiceManager.PersistCredentials(_credentials.ToFullUsername(), _credentials.Password);
+            Credentials.PersistCredentials(_credentials.ToFullUsername(), _credentials.Password);
         }
 
 		public void StartiTuneService()
 		{
-			ServiceManager.StartService(ServiceManager.ServiceName);
+			ServiceManager.StartService();
 		}
 	}
 }

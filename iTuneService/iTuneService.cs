@@ -4,7 +4,7 @@ using System.Runtime;
 using System.IO;
 using System.Diagnostics;
 using System.ServiceProcess;
-
+using Common;
 
 namespace iTuneService
 {
@@ -19,8 +19,8 @@ namespace iTuneService
         {
             _iTunesFileName = fn;
 
-            ServiceName = PublicServiceName;
-            EventLog.Source = PublicServiceName;
+            ServiceName = Constants.ServiceName;
+            EventLog.Source = Constants.ServiceName;
             EventLog.Log = "Application";
 
             CanHandlePowerEvent = true;
@@ -29,8 +29,8 @@ namespace iTuneService
             CanShutdown = true;
             CanStop = true;
 
-            if (!EventLog.SourceExists(PublicServiceName))
-                EventLog.CreateEventSource(PublicServiceName, "Application");
+            if (!EventLog.SourceExists(Constants.ServiceName))
+                EventLog.CreateEventSource(Constants.ServiceName, "Application");
         }
 
         protected override void OnStart(string[] args)

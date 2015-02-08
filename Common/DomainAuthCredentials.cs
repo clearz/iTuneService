@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Management;
 using System.Security;
 
-namespace iTuneServiceManager
+namespace Common
 {
     /// <summary>
     /// Generic class to parse domain from username and store password.
@@ -56,6 +59,18 @@ namespace iTuneServiceManager
         public override string ToString()
         {
             return ToFullUsername();
+        }
+
+        public static List<DomainAuthCredentials> GetLocalUsers()
+        {
+            var query = new SelectQuery("Win32_UserAccount");
+            using (var searcher = new ManagementObjectSearcher(query))
+            {
+                return searcher.Get()
+                               .Cast<ManagementObject>()
+                               .Select(envVar => new DomainAuthCredentials(Environment.MachineName + "\\" + envVar["Name"], null))
+                               .ToList();
+            }
         }
     }
 

@@ -69,31 +69,16 @@
     <ApplicationManifest>Misc\iTuneServiceManager.exe.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CredentialManagement">
-      <HintPath>..\packages\CredentialManagement.1.0.1\lib\net35\CredentialManagement.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data.SqlServerCe, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\Release\System.Data.SqlServerCe.dll</HintPath>
-    </Reference>
-    <Reference Include="System.DirectoryServices" />
-    <Reference Include="System.DirectoryServices.AccountManagement">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Data.DataSetExtensions">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
@@ -103,14 +88,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DomainAuthCredentials.cs" />
-    <Compile Include="Encryption.cs" />
     <Compile Include="Localization\MainFormStrings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>MainFormStrings.resx</DependentUpon>
     </Compile>
-    <Compile Include="Permission.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -135,10 +117,8 @@
     <Compile Include="InstallWin.Designer.cs">
       <DependentUpon>InstallWin.cs</DependentUpon>
     </Compile>
-    <Compile Include="Logger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Win32.cs" />
     <EmbeddedResource Include="Localization\MainFormStrings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>MainFormStrings.Designer.cs</LastGenOutput>
@@ -153,7 +133,6 @@
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="Misc\iTuneServiceManager.exe.manifest" />
-    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -194,6 +173,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{f343e2fa-301e-42c9-a8ea-f1a8e1ef097d}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EmptyRecycleBin\EmptyRecycleBin.csproj">
       <Project>{b3bf1a40-fc72-4d29-8113-427dbae06279}</Project>
       <Name>EmptyRecycleBin</Name>
