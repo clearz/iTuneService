@@ -33,6 +33,9 @@
     <Reference Include="CredentialManagement">
       <HintPath>..\packages\CredentialManagement.1.0.1\lib\net35\CredentialManagement.dll</HintPath>
     </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
@@ -47,10 +50,9 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="DomainAuthCredentials.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="Permission.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service.cs" />
+    <Compile Include="Util.cs" />
     <Compile Include="Win32.cs" />
   </ItemGroup>
   <ItemGroup>

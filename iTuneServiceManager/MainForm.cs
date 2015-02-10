@@ -11,7 +11,7 @@ namespace iTuneServiceManager
 {
     public partial class MainForm : Form
     {
-		private readonly Logger _logger = Logger.Instance;
+        private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(typeof(MainForm));
 
         private bool _setupComplete = false;
 
@@ -37,7 +37,7 @@ namespace iTuneServiceManager
 
         public MainForm()
         {
-            _logger.Log("MainForm.InitializeComponent()");
+            _logger.Info("MainForm.InitializeComponent()");
             InitializeComponent();
             ServiceManager.StateChanged += OnServiceManagerStateChanged;
         }
@@ -69,7 +69,7 @@ namespace iTuneServiceManager
                 }
             }
 
-            _logger.Log("programFilesDir: " + programFilesDir);
+            _logger.Info("programFilesDir: " + programFilesDir);
             
             // Get list of installed users for our combobox
             var localCreds = DomainAuthCredentials.GetLocalUsers();
@@ -89,8 +89,8 @@ namespace iTuneServiceManager
             passwordBox1.Text = startPassword;
             passwordBox2.Text = startPassword;
 
-            _logger.Log("computerNameBox.Text: " + computerNameBox.Text);
-            _logger.Log("Environment.UserName: " + Environment.UserName);
+            _logger.Info("computerNameBox.Text: " + computerNameBox.Text);
+            _logger.Info("Environment.UserName: " + Environment.UserName);
 
             // Initialize the state as setup until we can check
             ServiceManager.CurrentState = ServiceManager.State.Setup;
@@ -106,14 +106,14 @@ namespace iTuneServiceManager
             {
                 if (File.Exists(programFilesDir + @"\iTunes\iTunes.exe"))
                 {
-                    _logger.Log("iTunes Directory: " + programFilesDir + @"\iTunes\iTunes.exe");
+                    _logger.Info("iTunes Directory: " + programFilesDir + @"\iTunes\iTunes.exe");
                     iTunesPathBox.Text = programFilesDir + @"\iTunes\iTunes.exe";
                     openFileDialog1.InitialDirectory = programFilesDir + @"\iTunes\iTunes.exe";
                 }
                 else
                 {
                     if (programFilesDir != null) openFileDialog1.InitialDirectory = programFilesDir;
-                    _logger.Log("iTunes Directory: Not Found");
+                    _logger.Error("iTunes Directory: Not Found");
                 }
             }
 
@@ -123,7 +123,7 @@ namespace iTuneServiceManager
                 try
                 {
                     var serviceStatus = Service.ServiceStatus;
-                    _logger.Log("Service Status: " + serviceStatus);
+                    _logger.Info("Service Status: " + serviceStatus);
 
                     ServiceManager.CurrentState = serviceStatus == ServiceControllerStatus.Stopped
                                                       ? ServiceManager.State.ServiceStopped
@@ -131,8 +131,7 @@ namespace iTuneServiceManager
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log("Error while getting service status.");
-                    _logger.Log(ex);
+                    _logger.Error("Error while getting service status.", ex);
                 }
             }
 
@@ -318,7 +317,7 @@ namespace iTuneServiceManager
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log(ex);
+                    _logger.Error(string.Format("Error while {0} service.", shouldStart ? "starting": "stopping"), ex);
                     var answer = MessageBox.Show(this,
                                                  ex.Message,
                                                  string.Format("Error {0} Service", shouldStart ? "Starting" : "Stopping"),
@@ -462,7 +461,7 @@ namespace iTuneServiceManager
                 try { p.Kill(); }
                 catch (Exception ex)
                 {
-                    _logger.Log(ex);
+                    _logger.Error("Error killing empty recycle bin task!", ex);
                 }
                 MessageBox.Show(this,
                                 "Timed out waiting for the recycle bin to empty.",

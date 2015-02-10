@@ -13,6 +13,8 @@ namespace Common
 {
     public class Service
     {
+        private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(typeof(Service));
+
         public static bool IsServiceInstalled
         {
             get
@@ -53,7 +55,7 @@ namespace Common
             {
                 if (!Win32.LogonUser(credentials.Username, credentials.Domain, credentials.Password, Win32.LogonType.LOGON32_LOGON_NETWORK, 0, out loginToken))
                 {
-                    Logger.Instance.Log("Error while authenticating user: " + new Win32Exception(Marshal.GetLastWin32Error()));
+                    _logger.Error("Error while authenticating user!", new Win32Exception(Marshal.GetLastWin32Error()));
                     return false;
                 }
 
@@ -104,7 +106,7 @@ namespace Common
                 }
                 catch (Exception exception)
                 {
-                    Logger.Instance.Log("Exception when starting!\r\n" + exception);
+                    _logger.Error("Exception when starting!", exception);
                     return false;
                 }
 
@@ -136,7 +138,7 @@ namespace Common
                     }
                     catch (Exception exception)
                     {
-                        Logger.Instance.Log("Exception when stopping!\r\n" + exception);
+                        _logger.Error("Exception when stopping!", exception);
                         throw;
                     }
 

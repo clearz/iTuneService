@@ -9,7 +9,7 @@ namespace iTuneServiceManager
 {
     public partial class UninstallWin : Form
     {
-		private readonly Logger _logger = Logger.Instance;
+        private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(typeof(UninstallWin));
 
         private readonly MainForm _mainForm;
 
@@ -64,7 +64,7 @@ namespace iTuneServiceManager
             }
             catch (Exception e)
             {
-                _logger.Log(e);
+                _logger.Error("Error during uninstall.", e);
                 UpdateStatus(currentLabel, false);
                 waitBeforeReturnToMainForm = 3000;
             }

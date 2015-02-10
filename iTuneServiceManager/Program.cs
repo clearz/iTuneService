@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Windows.Forms;
-using Common;
+using log4net;
 
 namespace iTuneServiceManager
 {
@@ -12,7 +11,9 @@ namespace iTuneServiceManager
         [STAThread]
         static void Main()
         {
-            Logger.Instance.WriteToConsole = true;
+            // Store info for use by logger
+            GlobalContext.Properties["pid"] = Process.GetCurrentProcess().Id;
+            GlobalContext.Properties["whichApp"] = "MGR";
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

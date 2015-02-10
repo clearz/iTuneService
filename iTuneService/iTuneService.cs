@@ -12,7 +12,7 @@ namespace iTuneService
     {
         public const string PublicServiceName = "iTuneServer Service";
 
-        private static Logger _log = Logger.Instance;
+        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(typeof(iTuneService));
 
         Process _iTunesProcess;
         string _iTunesFileName;
@@ -41,15 +41,15 @@ namespace iTuneService
             _iTunesProcess.StartInfo.FileName = _iTunesFileName;
             _iTunesProcess.Start();
 
-            _log.Write("iTuneServer: Service Starting");
-            _log.Write("Starting Process: " + _iTunesFileName);
+            _log.Info("iTuneServer: Service Starting");
+            _log.Info("Starting Process: " + _iTunesFileName);
             
             Thread.Sleep(50);
 
             if (!_iTunesProcess.HasExited)
             {
-                _log.Write("Process: '" + _iTunesFileName + "' has started with a pid of " + _iTunesProcess.Id);
-                _log.Write("iTuneServer: Service Started");
+                _log.Info("Process: '" + _iTunesFileName + "' has started with a pid of " + _iTunesProcess.Id);
+                _log.Info("iTuneServer: Service Started");
             }
 
             base.OnStart(args);
@@ -57,14 +57,14 @@ namespace iTuneService
 
         protected override void OnStop()
         {
-            _log.Write("iTuneServer: Service Stopping");
-            _log.Write("Shutting down Process: '" + _iTunesFileName + "', PID: " + _iTunesProcess.Id);
+            _log.Info("iTuneServer: Service Stopping");
+            _log.Info("Shutting down Process: '" + _iTunesFileName + "', PID: " + _iTunesProcess.Id);
             _iTunesProcess.Kill();
             Thread.Sleep(50);
             if (_iTunesProcess.HasExited)
             {
-                _log.Write("Process: '" + _iTunesFileName + "' has exited");
-                _log.Write("iTuneServer: Service Stopped");
+                _log.Info("Process: '" + _iTunesFileName + "' has exited");
+                _log.Info("iTuneServer: Service Stopped");
             }
 
             base.OnStop();

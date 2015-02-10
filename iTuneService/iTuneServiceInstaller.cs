@@ -13,29 +13,29 @@ namespace iTuneService
     [RunInstaller(true)]
     public class iTuneServiceInstaller : Installer
     {
-        private static Logger _log = Logger.Instance;
+        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(typeof(iTuneServiceInstaller));
 
         ServiceProcessInstaller _serviceProcessInstaller = new ServiceProcessInstaller();
         ServiceInstaller _serviceInstaller = new ServiceInstaller();
         String _parameters = "";
-
+        
         public iTuneServiceInstaller()
         {
             BeforeInstall += ProjectInstaller_BeforeInstall;
             BeforeUninstall += ProjectInstaller_BeforeUninstall;
 
-            _log.Write("iTuneService: Service Installed");
+            _log.Info("iTuneService: Service Installed");
 
             Installers.Add(_serviceProcessInstaller);
             Installers.Add(_serviceInstaller);
         }
         void ProjectInstaller_BeforeInstall(object sender, InstallEventArgs e)
         {
+            _log.DebugFormat("Context Parameter Count={0}", Context.Parameters.Count);
             foreach (var parameter in Context.Parameters.Keys)
             {
-                _log.Write(String.Format("{0}={1}", parameter, Context.Parameters[parameter.ToString()]));
+                _log.DebugFormat("{0}={1}", parameter, Context.Parameters[parameter.ToString()]);
             }
-            _log.Write(Context.Parameters.Count.ToString());
 
             // Configure Account for Service Process.
             _serviceProcessInstaller.Account = ServiceAccount.User;
@@ -47,20 +47,20 @@ namespace iTuneService
             {
                 if (string.Compare(_serviceProcessInstaller.Username, savedCreds.Item1, StringComparison.CurrentCultureIgnoreCase) != 0)
                 {
-                    _log.Write(string.Format("Persisted credentials are for '{0}' but user passed in is '{1}'.",
+                    _log.Error(string.Format("Persisted credentials are for '{0}' but user passed in is '{1}'.",
                                              savedCreds.Item1,
                                              _serviceProcessInstaller.Username));
                     savedCreds = null;
                 }
                 else
                 {
-                    _log.Write(string.Format("Persisted credentials for '{0}' were successfully loaded.",
+                    _log.Info(string.Format("Persisted credentials for '{0}' were successfully loaded.",
                                              savedCreds.Item1));
                 }
             }
             else
             {
-                    _log.Write("Persisted credentials could not be loaded.");
+                _log.Error("Persisted credentials could not be loaded.");
             }
 
             _serviceProcessInstaller.Password = savedCreds != null ? savedCreds.Item2 : "";

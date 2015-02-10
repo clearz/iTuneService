@@ -16,7 +16,7 @@ namespace iTuneServiceManager
 {
 	public partial class InstallWin : Form
 	{
-		private readonly Logger _logger = Logger.Instance;
+        private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(typeof(InstallWin));
 
 	    private MainForm _mainForm;
 	    private readonly DomainAuthCredentials _credentials;
@@ -83,7 +83,7 @@ namespace iTuneServiceManager
             }
             catch (Exception e)
             {
-                _logger.Log(e);
+                _logger.Error("Error during install.", e);
                 UpdateStatus(currentLabel, false);
                 waitBeforeReturnToMainForm = 3000;
             }
@@ -112,16 +112,16 @@ namespace iTuneServiceManager
 
 		public void ValidateUserCredentials()
 		{
-            _logger.Log("ValidateUserCredentials" + _credentials.Domain);
+            _logger.Debug("ValidateUserCredentials: " + _credentials.ToFullUsername());
 
             var isValid = Service.AuthenticateUser(_credentials);
 			if ( !isValid )
 			{
-                _logger.Log("Throwing IOException: The given password does not match the user " + _credentials.ToFullUsername());
+                _logger.Error("Throwing IOException: The given password does not match the user " + _credentials.ToFullUsername());
                 throw new IOException("The given password does not match the user " + _credentials.ToFullUsername());
 			}
 
-            _logger.Log("User Validated" + _credentials.Domain);		    
+            _logger.Info("User Validated: " + _credentials.ToFullUsername());		    
 		}
 
 		public void GiveUserLoginAsServicePermission()
@@ -132,28 +132,23 @@ namespace iTuneServiceManager
 			}
 			catch ( Exception exception )
 			{
-                _logger.Log("Could not set right SeServiceLogonRight to " + _mainForm.iTunesPathBox.Text + ": " + exception);
+                _logger.Error("Could not give logon as service privilege to " + _credentials.ToFullUsername(), exception);
 			}
 		}
 
 		public void InstalliTuneService()
 		{
+            _logger.Debug("InstallWin.InstalliTuneService() Enter");
+
             var iTunesPath = string.Format("/{0}={1}", Constants.ITunesPathContextArg, _mainForm.iTunesPathBox.Text);
             var userNameArg = string.Format("/{0}={1}", Constants.UserNameContextArg, _credentials.ToFullUsername());
 
             Credentials.PersistCredentials(_credentials.ToFullUsername(), _credentials.Password);
 
-            _logger.Log("InstallWin.InstalliTuneService() Enter");
-		    _logger.Log(iTunesPath);
-		    _logger.Log(userNameArg);
+		    _logger.Debug(iTunesPath);
+		    _logger.Debug(userNameArg);
 		    
-            var installArgs = new[]
-		    {
-		        iTunesPath,
-		        userNameArg,
-		        "./iTuneService.exe"
-		    };
-			ServiceManager.Install(installArgs);
+			ServiceManager.Install(iTunesPath, userNameArg);
 
             ServiceManager.CurrentState = Service.ServiceStatus == ServiceControllerStatus.Stopped
                                                       ? ServiceManager.State.ServiceStopped

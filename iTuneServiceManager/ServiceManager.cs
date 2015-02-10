@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration.Install;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Common;
@@ -8,6 +9,8 @@ namespace iTuneServiceManager
 {
     public static class ServiceManager
     {
+        private const string ServiceLocation = "./iTuneService.exe";
+
         public enum State
         {
             Setup,
@@ -44,9 +47,11 @@ namespace iTuneServiceManager
                        : null;
         }
 
-        public static void Install(String[] args)
+        public static void Install(params string[] customArgs)
         {
-            ManagedInstallerClass.InstallHelper(args);
+            // Note that all arguments must come before the service EXE location
+            var argsWithLog = customArgs.Concat(new[] { GetServiceLogFile("Install"), GetInstallStateDir(), ServiceLocation }).ToArray();
+            ManagedInstallerClass.InstallHelper(argsWithLog);
         }
 
         public static bool StartService()
@@ -72,12 +77,12 @@ namespace iTuneServiceManager
             Uninstall(true);
         }
 
-        public static void Uninstall(bool Silent)
+        public static void Uninstall(bool silent)
         {
             if (Service.IsServiceInstalled)
             {
                 var ok = DialogResult.OK;
-                if (!Silent)
+                if (!silent)
                 {
                     ok = MessageBox.Show("Please ensure that any Services Console windows are closed before continuing.\r\n\r\nPress 'OK' when ready.", Constants.ServiceName, MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation);
                 }
@@ -89,24 +94,35 @@ namespace iTuneServiceManager
                     {
                         StopService();
                     }
-                    catch (Exception)
-                    { }
+                    catch (Exception) {}
 
-                    var location = "./iTuneService.exe";
-                    if (location == "")
-                    {
-                        MessageBox.Show("This product has not been installed correctly.  Uninstall cannot complete.", Constants.ServiceName, MessageBoxButtons.OK, MessageBoxIcon.Hand);
-                    }
-                    else
-                    {
-                        ManagedInstallerClass.InstallHelper(new[] { "/u", location });
-                    }
+                    // Note that all arguments must come before the service EXE location
+                    ManagedInstallerClass.InstallHelper(new[] { "/u", GetServiceLogFile("Uninstall"), GetInstallStateDir(), ServiceLocation });
                 }
                 catch (Exception exception)
                 {
                     MessageBox.Show("Could not uninstall service - " + exception);
                 }
             }
+        }
+
+        private static string GetServiceLogFile(string which)
+        {
+            // Use the same output folder as log4net log file by default
+            var logPath = Util.GetLog4NetLogPath() ?? @".";
+
+            // Note that spaces in the path are okay because of the way this
+            // is passed via a string array rather than a command line.
+            return string.Format(@"/LogFile={0}\Service.{1}.log", logPath.TrimEnd('\\'), which);
+        }
+        private static string GetInstallStateDir()
+        {
+            // Use the same output folder as log4net log file by default
+            var logPath = Util.GetLog4NetLogPath() ?? @".";
+
+            // Note that spaces in the path are okay because of the way this
+            // is passed via a string array rather than a command line.
+            return string.Format(@"/InstallStateDir={0}", logPath.TrimEnd('\\'));
         }
     }
 }

@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using CredentialManagement;
+using log4net;
 
 namespace Common
 {
     public static class Credentials
     {
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(Credentials));
+
         public static bool PersistCredentials(string username, string password)
         {
             using (var cm =
@@ -103,7 +103,7 @@ namespace Common
                 lastError = Win32.LsaNtStatusToWinError(Win32.LsaOpenPolicy(ref systemName, ref objectAttributes, Win32.DESIRED_ACCESS_MASK, out policyHandle));
                 if (lastError != 0L)
                 {
-                    Logger.Instance.Log("OpenPolicy failed: " + lastError);
+                    _logger.Error("OpenPolicy failed: " + lastError);
                     return lastError;
                 }
 
@@ -119,7 +119,7 @@ namespace Common
                 lastError = Win32.LsaNtStatusToWinError(Win32.LsaAddAccountRights(policyHandle, sid, userRights, 1L));
                 if (lastError != 0L)
                 {
-                    Logger.Instance.Log("AddAccountRights failed: " + lastError);
+                    _logger.Error("AddAccountRights failed: " + lastError);
                 }
 
                 return lastError;
