@@ -64,9 +64,9 @@ namespace Common
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern bool LookupAccountName(string lpSystemName, string lpAccountName, IntPtr psid, ref int cbsid, StringBuilder domainName, ref int cbdomainLength, ref int use);
         [DllImport("advapi32.dll", SetLastError = true)]
-        public static extern long AddAccountRights(IntPtr policyHandle, IntPtr accountSid, PermisionString[] userRights, long countOfRights);
+        public static extern long LsaAddAccountRights(IntPtr policyHandle, IntPtr accountSid, PermisionString[] userRights, long countOfRights);
         [DllImport("advapi32.dll")]
-        public static extern long Close(IntPtr objectHandle);
+        public static extern long LsaClose(IntPtr objectHandle);
         [DllImport("advapi32.dll")]
         public static extern long LsaNtStatusToWinError(long status);
         [DllImport("advapi32.dll")]

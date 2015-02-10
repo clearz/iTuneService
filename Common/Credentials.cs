@@ -116,7 +116,7 @@ namespace Common
 
                 var userRights = new[] { permission };
 
-                lastError = Win32.LsaNtStatusToWinError(Win32.AddAccountRights(policyHandle, sid, userRights, 1L));
+                lastError = Win32.LsaNtStatusToWinError(Win32.LsaAddAccountRights(policyHandle, sid, userRights, 1L));
                 if (lastError != 0L)
                 {
                     Logger.Instance.Log("AddAccountRights failed: " + lastError);
@@ -127,7 +127,7 @@ namespace Common
             finally
             {
                 if (systemName.Buffer != IntPtr.Zero) Marshal.FreeHGlobal(systemName.Buffer);
-                if (policyHandle != IntPtr.Zero) Win32.Close(policyHandle);
+                if (policyHandle != IntPtr.Zero) Win32.LsaClose(policyHandle);
                 if (permission.Buffer != IntPtr.Zero) Marshal.FreeHGlobal(systemName.Buffer);
                 if (sid != IntPtr.Zero) Win32.FreeSid(sid);
             }
