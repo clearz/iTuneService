@@ -47,7 +47,6 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="DomainAuthCredentials.cs" />
-    <Compile Include="Encryption.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Permission.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
