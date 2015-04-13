@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.ServiceProcess;
@@ -12,8 +13,10 @@ namespace iTuneServiceManager
     public partial class MainForm : Form
     {
         private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(typeof(MainForm));
-
+        private NotifyIcon trayIcon;
+        private ContextMenu trayMenu;
         private bool _setupComplete = false;
+        private bool allowshowdisplay;
 
         public bool iTunesFound
         {
@@ -35,11 +38,35 @@ namespace iTuneServiceManager
             }
         }
 
-        public MainForm()
+        public MainForm(bool startMinimised)
         {
+            allowshowdisplay = !startMinimised;
             _logger.Info("MainForm.InitializeComponent()");
             InitializeComponent();
+            trayMenu = new ContextMenu();
+            trayMenu.MenuItems.Add("Exit", OnExit);
+
+            // Create a tray icon. In this example we use a
+            // standard system icon for simplicity, but you
+            // can of course use your own custom icon too.
+            trayIcon = new NotifyIcon();
+            trayIcon.Text = "iTuneService";
+            trayIcon.Icon = Properties.Resources.iTunes;
+            trayIcon.Visible = startMinimised;
+            trayIcon.DoubleClick += ( sender, args ) => this.Visible = allowshowdisplay = !(trayIcon.Visible = false);
+            // Add menu to tray icon and show it.
+            trayIcon.ContextMenu = trayMenu;
             ServiceManager.StateChanged += OnServiceManagerStateChanged;
+        }
+
+        private void OnExit(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        protected override void SetVisibleCore(bool value)
+        {
+            base.SetVisibleCore(allowshowdisplay ? value : allowshowdisplay);
         }
 
         public void OnLoad(object sender, EventArgs e)
@@ -138,6 +165,7 @@ namespace iTuneServiceManager
             // Manually trigger actions that fire on app events
             CheckSetupComplete();
             OnServiceManagerStateChanged(null, ServiceManager.CurrentState);
+
         }
 
         public void CheckSetupComplete()
@@ -470,6 +498,18 @@ namespace iTuneServiceManager
                                 MessageBoxIcon.Error);
 
             }
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if ( e.CloseReason == CloseReason.UserClosing )
+            {
+                Visible = false;
+                trayIcon.Visible = true;
+                e.Cancel = true;
+            }
+            else
+                trayIcon.Visible = false;
         }
     }
 }
