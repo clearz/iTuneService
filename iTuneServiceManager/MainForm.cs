@@ -13,8 +13,7 @@ namespace iTuneServiceManager
     public partial class MainForm : Form
     {
         private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(typeof(MainForm));
-        private NotifyIcon trayIcon;
-        private ContextMenu trayMenu;
+        private readonly NotifyIcon _trayIcon;
         private bool _setupComplete = false;
         private bool allowshowdisplay;
 
@@ -40,22 +39,22 @@ namespace iTuneServiceManager
 
         public MainForm(bool startMinimised)
         {
+            var trayMenu = new ContextMenu();
             allowshowdisplay = !startMinimised;
             _logger.Info("MainForm.InitializeComponent()");
             InitializeComponent();
-            trayMenu = new ContextMenu();
             trayMenu.MenuItems.Add("Exit", OnExit);
 
             // Create a tray icon. In this example we use a
             // standard system icon for simplicity, but you
             // can of course use your own custom icon too.
-            trayIcon = new NotifyIcon();
-            trayIcon.Text = "iTuneService";
-            trayIcon.Icon = Properties.Resources.iTunes;
-            trayIcon.Visible = startMinimised;
-            trayIcon.DoubleClick += ( sender, args ) => this.Visible = allowshowdisplay = !(trayIcon.Visible = false);
+            this._trayIcon = new NotifyIcon();
+            this._trayIcon.Text = "iTuneService";
+            this._trayIcon.Icon = Properties.Resources.iTunes;
+            this._trayIcon.Visible = startMinimised;
+            this._trayIcon.DoubleClick += ( sender, args ) => this.Visible = allowshowdisplay = !(this._trayIcon.Visible = false);
             // Add menu to tray icon and show it.
-            trayIcon.ContextMenu = trayMenu;
+            this._trayIcon.ContextMenu = trayMenu;
             ServiceManager.StateChanged += OnServiceManagerStateChanged;
         }
 
@@ -69,11 +68,13 @@ namespace iTuneServiceManager
             base.SetVisibleCore(allowshowdisplay ? value : allowshowdisplay);
         }
 
-        public void OnLoad(object sender, EventArgs e)
+        public void OnLoad( object sender, EventArgs e )
         {
-            string programFilesDir;
-            if ((programFilesDir = Environment.GetEnvironmentVariable("ProgramFiles(x86)")) == null) programFilesDir = Environment.GetEnvironmentVariable("ProgramFiles");
-
+            var programFilesDirs = new[]
+                                   {
+                                       Environment.GetEnvironmentVariable( "ProgramFiles(x86)" ),
+                                       Environment.GetEnvironmentVariable( "ProgramFiles" )
+                                   };
             var savedCreds = Credentials.RetrieveCredential();
             var startDomain = Environment.MachineName;
             var startUser = Environment.UserName;
@@ -81,91 +82,97 @@ namespace iTuneServiceManager
 
             // See who's running the current service and look up his credentials if possible
             var currentUser = Service.GetServiceUsername();
-            if (currentUser != null)
+            if ( currentUser != null )
             {
                 startDomain = currentUser.Domain == "." ? Environment.MachineName : currentUser.Domain;
                 startUser = currentUser.Username;
-                if (savedCreds != null && currentUser.UserEquals(savedCreds.Item1))
+                if ( savedCreds != null && currentUser.UserEquals( savedCreds.Item1 ) )
                 {
                     startPassword = savedCreds.Item2;
                 }
                 else
                 {
-                    if (savedCreds != null) Credentials.RemoveCredential();
+                    if ( savedCreds != null ) Credentials.RemoveCredential();
                     startPassword = string.Empty;
                 }
             }
 
-            _logger.Info("programFilesDir: " + programFilesDir);
-            
+            _logger.Info( "programFilesDirs: " + programFilesDirs.Aggregate( ( s1, s2 ) => s1 + ", " + s2 ) );
+
             // Get list of installed users for our combobox
             var localCreds = DomainAuthCredentials.GetLocalUsers();
-            
+
             // Add list to combobox and select start user if there
-            usernameBox.Items.AddRange(localCreds.ToArray());
-            var userToSelect = localCreds.FirstOrDefault(c => c.UserEquals(startDomain + "\\" + startUser));
-            if (userToSelect != null)
+            if ( localCreds != null )
             {
-                usernameBox.SelectedItem = userToSelect;
-            }
-            else
-            {
-                computerNameBox.Text = startDomain;
-                usernameBox.Text = startUser;
-            }
-            passwordBox1.Text = startPassword;
-            passwordBox2.Text = startPassword;
+                usernameBox.Items.AddRange( localCreds.Cast<object>().ToArray() );
+                var userToSelect = localCreds.FirstOrDefault( c => c.UserEquals( startDomain + "\\" + startUser ) );
 
-            _logger.Info("computerNameBox.Text: " + computerNameBox.Text);
-            _logger.Info("Environment.UserName: " + Environment.UserName);
+                if ( userToSelect != null )
+                    usernameBox.SelectedItem = userToSelect;
 
-            // Initialize the state as setup until we can check
-            ServiceManager.CurrentState = ServiceManager.State.Setup;
-
-            // Use currently set iTunes path or try to detect
-            var currentiTunesPath = ServiceManager.GetServiceiTunesPath();
-            if (currentiTunesPath != null)
-            {
-                openFileDialog1.InitialDirectory = Path.GetDirectoryName(currentiTunesPath);
-                iTunesPathBox.Text = currentiTunesPath;
-            }
-            else
-            {
-                if (File.Exists(programFilesDir + @"\iTunes\iTunes.exe"))
+                else
                 {
-                    _logger.Info("iTunes Directory: " + programFilesDir + @"\iTunes\iTunes.exe");
-                    iTunesPathBox.Text = programFilesDir + @"\iTunes\iTunes.exe";
-                    openFileDialog1.InitialDirectory = programFilesDir + @"\iTunes\iTunes.exe";
+                    computerNameBox.Text = startDomain;
+                    usernameBox.Text = startUser;
+                }
+                passwordBox1.Text = startPassword;
+                passwordBox2.Text = startPassword;
+
+                _logger.Info( "computerNameBox.Text: " + computerNameBox.Text );
+                _logger.Info( "Environment.UserName: " + Environment.UserName );
+
+                // Initialize the state as setup until we can check
+                ServiceManager.CurrentState = ServiceManager.State.Setup;
+
+                // Use currently set iTunes path or try to detect
+                var currentiTunesPath = ServiceManager.GetServiceiTunesPath();
+                if ( currentiTunesPath != null )
+                {
+                    openFileDialog1.InitialDirectory = Path.GetDirectoryName( currentiTunesPath );
+                    iTunesPathBox.Text = currentiTunesPath;
                 }
                 else
                 {
-                    if (programFilesDir != null) openFileDialog1.InitialDirectory = programFilesDir;
-                    _logger.Error("iTunes Directory: Not Found");
+                    bool found = false;
+                    foreach (var source in programFilesDirs.Where( s => s != null ))
+                    {
+                        if ( !found && ( found = File.Exists( source + @"\iTunes\iTunes.exe" ) ) )
+                        {
+                            _logger.Info( "iTunes Directory: " + source + @"\iTunes\iTunes.exe" );
+                            iTunesPathBox.Text = source + @"\iTunes\iTunes.exe";
+                            openFileDialog1.InitialDirectory = source + @"\iTunes\iTunes.exe";
+                        }
+                    }
+                    if ( !found )
+                    {
+                        _logger.Error( "iTunes Directory: Not Found" );
+                    }
                 }
-            }
 
-            // Check to see if service is installed / running
-            if (Service.IsServiceInstalled)
-            {
-                try
+                // Check to see if service is installed / running
+                if ( Service.IsServiceInstalled )
                 {
-                    var serviceStatus = Service.ServiceStatus;
-                    _logger.Info("Service Status: " + serviceStatus);
+                    try
+                    {
+                        var serviceStatus = Service.ServiceStatus;
+                        _logger.Info( "Service Status: " + serviceStatus );
 
-                    ServiceManager.CurrentState = serviceStatus == ServiceControllerStatus.Stopped
-                                                      ? ServiceManager.State.ServiceStopped
-                                                      : ServiceManager.State.ServiceRunning;
+                        ServiceManager.CurrentState = serviceStatus == ServiceControllerStatus.Stopped
+                            ? ServiceManager.State.ServiceStopped
+                            : ServiceManager.State.ServiceRunning;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error( "Error while getting service status.", ex );
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.Error("Error while getting service status.", ex);
-                }
+
+                // Manually trigger actions that fire on app events
+                CheckSetupComplete();
+                OnServiceManagerStateChanged( null, ServiceManager.CurrentState );
+
             }
-
-            // Manually trigger actions that fire on app events
-            CheckSetupComplete();
-            OnServiceManagerStateChanged(null, ServiceManager.CurrentState);
-
         }
 
         public void CheckSetupComplete()
@@ -505,11 +512,11 @@ namespace iTuneServiceManager
             if ( e.CloseReason == CloseReason.UserClosing )
             {
                 Visible = false;
-                trayIcon.Visible = true;
+                this._trayIcon.Visible = true;
                 e.Cancel = true;
             }
             else
-                trayIcon.Visible = false;
+                this._trayIcon.Visible = false;
         }
     }
 }
