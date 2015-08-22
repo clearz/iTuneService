@@ -35,3 +35,9 @@ You log in as an administrator and install the service under that alternate user
 Visit the releases page to [download the installer](https://github.com/clearz/iTuneService/releases/latest).
 
 **This will require local administrator privileges to install / run.**
+
+#### Reporting an Issue / Requesting a Feature
+
+To report a problem or request a feature, head on over to the [Issues](https://github.com/clearz/iTuneService/issues) section and see if it's already listed. If not, go ahead and open a new issue.
+
+If you're reporting an issue, please make sure to attach the logs found in: `%allusersprofile%\iTuneService`. For convenience, you may want to provide the files via a [gist](https://gist.github.com).
