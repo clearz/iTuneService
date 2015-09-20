@@ -220,6 +220,7 @@ namespace iTuneServiceManager
                     break;
                 case ServiceManager.State.Installing:
                 case ServiceManager.State.Uninstalling:
+                case ServiceManager.State.ServiceInterrupted:
                     selectITunesExeBtn.Enabled = false;
                     computerNameBox.Enabled = false;
                     usernameBox.Enabled = false;
@@ -244,7 +245,7 @@ namespace iTuneServiceManager
                     UninstallBtn.Enabled = true;
                     startBtn.Enabled = true;
                     startBtn.Text = MainFormStrings.ACTION_STOP;
-                    openITunes.Enabled = false;
+                    openITunes.Enabled = true;
                     emptyRecycleBinButton.Enabled = true;
                     break;
                 case ServiceManager.State.ServiceStopped:
@@ -374,8 +375,27 @@ namespace iTuneServiceManager
                 return;
             }
 
+            var interruptingService = ServiceManager.CurrentState == ServiceManager.State.ServiceRunning;
+
+            if (interruptingService)
+            {
+                // Attempt to stop service
+                OnStartBtnClick(sender, e);
+
+                // Exit if couldn't successfully stop service
+                if (ServiceManager.CurrentState == ServiceManager.State.ServiceRunning) return;
+
+                ServiceManager.CurrentState = ServiceManager.State.ServiceInterrupted;
+
+                Visible = false;
+                _trayIcon.Visible = true;
+            }
+
             var p = new Process();
-            
+
+            p.EnableRaisingEvents = interruptingService;
+            p.Exited += RestartServiceOnProcessExit;
+
             var creds = CurrentCredentials;
             p.StartInfo.Domain = creds.Domain;
             p.StartInfo.UserName = creds.Username;
@@ -386,8 +406,17 @@ namespace iTuneServiceManager
             p.StartInfo.WorkingDirectory = Path.GetDirectoryName(iTunesPathBox.Text);
             p.StartInfo.ErrorDialog = true;
             p.StartInfo.LoadUserProfile = true;
-
+            
             p.Start();
+        }
+
+        private void RestartServiceOnProcessExit(object sender, EventArgs e)
+        {
+            Visible = true;
+            _trayIcon.Visible = false;
+
+            System.Threading.Thread.Sleep(250);
+            OnStartBtnClick(sender, e);
         }
 
         #region Mouse Over Text Handling

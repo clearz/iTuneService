@@ -18,6 +18,7 @@ namespace iTuneServiceManager
             Installing,
             ServiceRunning,
             ServiceStopped,
+            ServiceInterrupted,
             Uninstalling,
         }
 
