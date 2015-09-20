@@ -43,10 +43,11 @@ namespace iTuneServiceManager
         private void OnFormClosed(object sender, FormClosedEventArgs e)
         {
             _mainForm.Visible = true;
+            ServiceManager.InstallingOrUninstalling = false;
         }
 
-	    public void Install()
-	    {
+        public void Install()
+        {
 	        Label currentLabel = null;
             int waitBeforeReturnToMainForm = 2000;
 

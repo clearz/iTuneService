@@ -34,6 +34,7 @@ namespace iTuneServiceManager
         {
             _mainForm.CheckSetupComplete();
             _mainForm.Visible = true;
+            ServiceManager.InstallingOrUninstalling = false;
         }
 
         public void Uninstall()

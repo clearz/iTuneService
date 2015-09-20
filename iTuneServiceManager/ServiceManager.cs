@@ -15,16 +15,16 @@ namespace iTuneServiceManager
         {
             Setup,
             SetupComplete,
-            Installing,
             ServiceRunning,
             ServiceStopped,
             ServiceInterrupted,
-            Uninstalling,
         }
 
         private static State _currentState;
+        private static bool _installingOrUninstalling;
 
         public static event EventHandler<State> StateChanged;
+
         public static State CurrentState
         {
             get { return _currentState; }
@@ -32,6 +32,17 @@ namespace iTuneServiceManager
             {
                 if (_currentState == value) return;
                 _currentState = value;
+                if (StateChanged != null) StateChanged(null, _currentState);
+            }
+        }
+
+        public static bool InstallingOrUninstalling
+        {
+            get { return _installingOrUninstalling; }
+            set
+            {
+                if (_installingOrUninstalling == value) return;
+                _installingOrUninstalling = value;
                 if (StateChanged != null) StateChanged(null, _currentState);
             }
         }
