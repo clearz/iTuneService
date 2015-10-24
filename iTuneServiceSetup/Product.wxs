@@ -21,14 +21,15 @@
       Compressed="yes" 
       InstallScope="perMachine" />
 
-		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate EmbedCab="yes" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
 
-    <!-- Set options for advanced UI -->
-    <Property Id="ApplicationFolderName" Value="$(var.ProductName)" />  <!-- Default install folder -->
-    <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
-    <WixVariable Id="WixUISupportPerUser" Value="0" />
+    <!-- Set options for UI -->
+    <Property Id="WIXUI_INSTALLDIR" Value="APPLICATIONFOLDER" />
 
+    <!-- Option to install start menu shortcut -->
+    <Property Id="INSTALL_STARTUP_SHORTCUT" Value="1" />
+    
     <!-- Set up to launch service manager at end of install -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch iTuneService Manager" />
@@ -36,7 +37,7 @@
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
     
     <UI>
-      <UIRef Id="WixUI_Advanced" />
+      <UIRef Id="Custom_InstallDir" />
 
       <!-- Display UI to launch service manager at the end -->
       <Publish Dialog="ExitDialog"
@@ -48,27 +49,30 @@
     </UI>
 
     <!-- Set up directories used -->
- 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFilesFolder">
-				<Directory Id="APPLICATIONFOLDER" />
-			</Directory>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="APPLICATIONFOLDER" Name="$(var.ProductName)" />
+      </Directory>
 
       <Directory Id="ProgramMenuFolder">
           <Directory Id="ApplicationProgramsFolder" Name="$(var.ProductName)"/>
       </Directory>
+      
+      <Directory Id="StartupFolder" Name="StartUp" />
 
       <Directory Id="CommonAppDataFolder">
         <Directory Id="COMMONDATAFOLDER" Name="iTuneService"/>
       </Directory>
-		</Directory>
+    </Directory>
     
     <!-- Cobble together components to make up the main product -->
-		<Feature Id="ProductFeature" Title="$(var.ProductName)" Level="1">
-			<ComponentGroupRef Id="ProductComponents" />
+    <Feature Id="ProductFeature" Title="$(var.ProductName)" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
       <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="StartupShortcut" />
       <ComponentRef Id="CleanupMainApplicationFolder" />
       <ComponentRef Id="CleanupCommonDataFolder"/>
-		</Feature>
+    </Feature>
 
     <!-- Main Product Components -->
     <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
@@ -133,6 +137,23 @@
         
         <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
         <RegistryValue Root="HKCU" Key="Software\$(var.SkuName)" Name="installed" Type="integer" Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+    
+    <!-- Startup shortcut -->
+    <DirectoryRef Id="StartupFolder">
+      <Component Id="StartupShortcut" Guid="a5f08666-f0c5-42f3-8c1c-bd837a71c6e3">
+        <Condition>INSTALL_STARTUP_SHORTCUT</Condition>
+        
+        <Shortcut Id="StartupFolderShortcut"
+                  Name="Manage iTuneService"
+                  Description="Runs the iTuneService management application starting in tray."
+                  Target="[#iTuneServiceManager.exe]"
+                  Arguments="-m"
+                  WorkingDirectory="APPLICATIONFOLDER" />
+        
+        <RegistryValue Root="HKCU" Key="Software\$(var.SkuName)" Name="startup_installed" Type="integer" Value="1"
                        KeyPath="yes" />
       </Component>
     </DirectoryRef>

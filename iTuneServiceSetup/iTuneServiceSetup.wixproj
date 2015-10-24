@@ -21,7 +21,9 @@
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Custom_InstallDirDlg.wxs" />
     <Compile Include="Product.wxs" />
+    <Compile Include="Custom_InstallDir.wxs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj">
