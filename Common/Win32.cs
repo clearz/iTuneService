@@ -155,5 +155,50 @@ namespace Common
         public const uint SERVICE_ALL_ACCESS = 0xf01ffu;
 
         #endregion
+
+        #region To Support Elevation
+
+        [DllImport("user32", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern int SendMessage(IntPtr hWnd, UInt32 Msg, int wParam, IntPtr lParam);
+
+        public const UInt32 BCM_SETSHIELD = 0x160C;
+
+        [DllImport("Shell32.dll", SetLastError = false)]
+        public static extern Int32 SHGetStockIconInfo(SHSTOCKICONID siid, SHGSI uFlags, ref SHSTOCKICONINFO psii);
+
+        public enum SHSTOCKICONID : uint
+        {
+            SIID_SHIELD = 77
+        }
+
+        [Flags]
+        public enum SHGSI : uint
+        {
+            SHGSI_ICON = 0x000000100,
+            SHGSI_SMALLICON = 0x000000001
+        }
+
+        [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct SHSTOCKICONINFO
+        {
+            public UInt32 cbSize;
+            public IntPtr hIcon;
+            public Int32 iSysIconIndex;
+            public Int32 iIcon;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szPath;
+        }
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetMenu(IntPtr hwnd);
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetSubMenu(IntPtr hMenu, int nPos);
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetMenuItemID(IntPtr hMenu, int nPos);
+        [DllImport("user32.dll")]
+        public static extern int SetMenuItemBitmaps(IntPtr hMenu, IntPtr nPosition, int wFlags, IntPtr hBitmapUnchecked, IntPtr hBitmapChecked);
+
+        #endregion
     }
 }

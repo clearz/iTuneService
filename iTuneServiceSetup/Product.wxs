@@ -104,9 +104,14 @@
         <File Source="$(var.iTuneServiceManager.TargetDir)log4net.config" />
       </Component>
 
-      <!-- log4net Library and Configuration -->
+      <!-- NAudio Library -->
       <Component Id="NAudio">
         <File Source="$(var.iTuneServiceManager.TargetDir)NAudio.dll" />
+      </Component>
+
+      <!-- CommandLine Library -->
+      <Component Id="CommandLine">
+        <File Source="$(var.iTuneServiceManager.TargetDir)CommandLine.dll" />
       </Component>
 
       <!-- Common Library -->

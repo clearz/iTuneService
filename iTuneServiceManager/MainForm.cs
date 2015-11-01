@@ -13,11 +13,13 @@ namespace iTuneServiceManager
     public partial class MainForm : Form
     {
         private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(typeof(MainForm));
-        private readonly MenuItem _serviceControlMenuItem;
-        private readonly MenuItem _runInteractiveMenuItem;
+        private readonly ToolStripMenuItem _serviceControlMenuItem;
+        private readonly ToolStripMenuItem _runInteractiveMenuItem;
         private readonly NotifyIcon _trayIcon;
+        private readonly Options _options;
         private bool _startupComplete;
         private bool _allowMakeVisible;
+        private bool _suppressNextVisible;
         private bool _showMinimizedToTrayNotice;
         private bool _wasVisibleWhenRunInteractive;
         private bool _setupComplete = false;
@@ -54,13 +56,22 @@ namespace iTuneServiceManager
             }
         }
 
-        public MainForm(bool startMinimised)
+        public MainForm(Options commandOptions)
         {
+            _options = commandOptions;
+
             // This will prevent the form from showing when the application is first run
-            _allowMakeVisible = !startMinimised;
+            _allowMakeVisible = !_options.Minimized;
+
+            // See if we should install / uninstall the service
+            var shouldInstallService = _options.InstallService && !Service.IsServiceInstalled && _options.HasFullInstallInfo;
+            var shouldUninstallService = _options.UninstallService && Service.IsServiceInstalled;
+
+            // This will suppress the next visibility call so the main window won't be visible while installing/uninstalling
+            _suppressNextVisible = shouldInstallService || shouldUninstallService;
 
             // This will show a notice when the app is minimized to the tray the first time
-            _showMinimizedToTrayNotice = !startMinimised;
+            _showMinimizedToTrayNotice = !_options.Minimized;
 
             _logger.Info("MainForm.InitializeComponent()");
             InitializeComponent();
@@ -71,7 +82,7 @@ namespace iTuneServiceManager
             this._trayIcon = new NotifyIcon();
             this._trayIcon.Text = "iTuneService Manager";
             this._trayIcon.Icon = Properties.Resources.iTunes;
-            this._trayIcon.Visible = startMinimised;
+            this._trayIcon.Visible = _options.Minimized;
             this._trayIcon.DoubleClick += ( sender, args ) =>
                                           {
                                               _allowMakeVisible = true;
@@ -80,28 +91,53 @@ namespace iTuneServiceManager
                                           };
 
             // Create menu items that we'll need to keep track of
-            _serviceControlMenuItem = new MenuItem("Start/Stop Service", OnStartBtnClick);
-            _runInteractiveMenuItem = new MenuItem("Run iTunes Interactively", OnOpenITunesClick);
+            _serviceControlMenuItem = new ToolStripMenuItem("Start/Stop Service", null, OnStartBtnClick);
+            _runInteractiveMenuItem = new ToolStripMenuItem("Run iTunes Interactively", null, OnOpenITunesClick);
 
             // Create menu and add it to tray icon
-            var trayMenu = new ContextMenu();
-            trayMenu.MenuItems.Add(_serviceControlMenuItem);
-            trayMenu.MenuItems.Add(_runInteractiveMenuItem);
-            trayMenu.MenuItems.Add("-");
-            trayMenu.MenuItems.Add("Exit", OnExit);            
-            this._trayIcon.ContextMenu = trayMenu;
+            var trayMenu = new ContextMenuStrip();
+            trayMenu.Items.Add(_serviceControlMenuItem);
+            trayMenu.Items.Add(_runInteractiveMenuItem);
+            trayMenu.Items.Add("-");
+            trayMenu.Items.Add("Exit", null, OnExit);            
+            this._trayIcon.ContextMenuStrip = trayMenu;
 
             ServiceManager.StateChanged += OnServiceManagerStateChanged;
 
-            // If we're starting minimized, we'll skip a lot of the startup actions that happen
+            // If we're starting minimized or if we have a startup action, we'll skip a lot of the startup actions that happen
             // during OnLoad so call it here to make sure context menu items are in a valid state.
-            if (startMinimised)
+            if (!_allowMakeVisible || _suppressNextVisible)
             {
                 _logger.Info("Calling OnLoad because starting minimized");
                 OnLoad(null, EventArgs.Empty);
             }
 
             _startupComplete = true;
+
+            // Perform actions that require elevation, but ignore if we're not elevated
+            if (Util.IsRunAsAdmin())
+            {
+                if (_options.StartService)
+                {
+                    if (ServiceManager.CurrentState == ServiceManager.State.ServiceStopped) OnStartBtnClick(null, EventArgs.Empty);
+                }
+                else if (_options.StopService)
+                {
+                    if (ServiceManager.CurrentState == ServiceManager.State.ServiceRunning) OnStartBtnClick(null, EventArgs.Empty);
+                }
+                else if (_options.RunInteractive)
+                {
+                    OnOpenITunesClick(null, EventArgs.Empty);
+                }
+                else if (shouldInstallService)
+                {
+                    OnInstallBtnClick(null, EventArgs.Empty);
+                }
+                else if (shouldUninstallService)
+                {
+                    StartUninstall();
+                }
+            }
         }
 
         private void OnExit(object sender, EventArgs e)
@@ -117,7 +153,15 @@ namespace iTuneServiceManager
 
         protected override void SetVisibleCore(bool value)
         {
-            value = _allowMakeVisible && value;
+            if (value && _suppressNextVisible)
+            {
+                value = false;
+                _suppressNextVisible = false;
+            }
+            else
+            {
+                value = _allowMakeVisible && value;
+            }
             if (value == Visible) return;
 
             base.SetVisibleCore(value);
@@ -135,6 +179,19 @@ namespace iTuneServiceManager
 
         public void OnLoad( object sender, EventArgs e )
         {
+            // Add UAC to appropriate boxes if necessary
+            Util.CheckSetUACIcon(installBtn);
+            Util.CheckSetUACIcon(UninstallBtn);
+            Util.CheckSetUACIcon(startBtn);
+            Util.CheckSetUACIcon(_serviceControlMenuItem);
+            if (Service.ServiceStatus != ServiceControllerStatus.Stopped)
+            {
+                // If the service is running we'll need admin privileges to stop
+                // the service before running in interactive mode.
+                Util.CheckSetUACIcon(_runInteractiveMenuItem);
+            }
+
+            // Grab current info
             var programFilesDirs = new[]
                                    {
                                        Environment.GetEnvironmentVariable( "ProgramFiles(x86)" ),
@@ -144,6 +201,23 @@ namespace iTuneServiceManager
             var startDomain = Environment.MachineName;
             var startUser = Environment.UserName;
             var startPassword = string.Empty;
+            var shouldInstallService = _options.InstallService && !Service.IsServiceInstalled && _options.HasFullInstallInfo;
+
+            // Override starting info from command line if we've got an install command
+            if (shouldInstallService)
+            {
+                savedCreds = null;
+                startDomain = _options.Domain;
+                startUser = _options.User;
+                try
+                {
+                    startPassword = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(_options.Password));
+                }
+                catch (Exception)
+                {
+                    startPassword = _options.Password;
+                }
+            }
 
             // See who's running the current service and look up his credentials if possible
             var currentUser = Service.GetServiceUsername();
@@ -180,11 +254,6 @@ namespace iTuneServiceManager
                     usernameBox.SelectedItem = userToSelect;
                     EnsureUsernameBoxTextCorrect(); // this is necessary when the value was set when we started minimized
                 }
-                else
-                {
-                    computerNameBox.Text = startDomain;
-                    usernameBox.Text = startUser;
-                }
 
                 passwordBox1.Text = startPassword;
                 passwordBox2.Text = startPassword;
@@ -201,6 +270,11 @@ namespace iTuneServiceManager
                 {
                     openFileDialog1.InitialDirectory = Path.GetDirectoryName( currentiTunesPath );
                     iTunesPathBox.Text = currentiTunesPath;
+                }
+                else if (shouldInstallService)
+                {
+                    iTunesPathBox.Text = _options.ITunesPath;
+                    openFileDialog1.InitialDirectory = _options.ITunesPath;
                 }
                 else
                 {
@@ -241,7 +315,6 @@ namespace iTuneServiceManager
                 // Manually trigger actions that fire on app events
                 CheckSetupComplete();
                 OnServiceManagerStateChanged( null, ServiceManager.CurrentState );
-
             }
         }
 
@@ -409,6 +482,19 @@ namespace iTuneServiceManager
 
         private void OnInstallBtnClick(object sender, EventArgs e)
         {
+            if (!Util.IsRunAsAdmin())
+            {
+				// Relaunch as admin because this command requires admin privileges
+                Util.RelaunchAsAdmin(string.Format("--{0} --{1} \"{2}\" --{3} \"{4}\" --{5} \"{6}\" --{7} \"{8}\"", 
+                                                   OptionConstants.InstallService,
+                                                   OptionConstants.ITunesPath, iTunesPathBox.Text,
+                                                   OptionConstants.Domain, computerNameBox.Text,
+                                                   OptionConstants.User, usernameBox.Text,
+                                                   OptionConstants.Password, Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(passwordBox1.Text))));
+                startBtn.Enabled = true;
+                return;
+            }
+
             ServiceManager.InstallingOrUninstalling = true;
             
             Visible = false;
@@ -420,16 +506,32 @@ namespace iTuneServiceManager
 
         private void OnUninstallBtnClick(object sender, EventArgs e)
         {
-            if (MessageBox.Show(this, "Are you sure you want to uninstall the iTuneServer service?", "Uninstall Service", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            if (MessageBox.Show(this,
+                                "Are you sure you want to uninstall the iTuneServer service?",
+                                "Uninstall Service",
+                                MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-                ServiceManager.InstallingOrUninstalling = true;
-
-                Visible = false;
-
-                var box = new UninstallWin(this) { Owner = this, Visible = true };
-
-                HideTitleBarItems(box.Handle);
+                StartUninstall();
             }
+        }
+
+        private void StartUninstall()
+        {
+            if (!Util.IsRunAsAdmin())
+            {
+                // Relaunch as admin because this command requires admin privileges
+                Util.RelaunchAsAdmin(string.Format("--{0}", OptionConstants.UninstallService));
+                startBtn.Enabled = true;
+                return;
+            }
+
+            ServiceManager.InstallingOrUninstalling = true;
+
+            Visible = false;
+
+            var box = new UninstallWin(this) { Owner = this, Visible = true };
+
+            HideTitleBarItems(box.Handle);
         }
 
         private static void HideTitleBarItems(IntPtr windowHandle)
@@ -451,6 +553,16 @@ namespace iTuneServiceManager
             startBtn.Enabled = false;
 
             var shouldStart = (startBtn.Text == MainFormStrings.ACTION_START);
+
+            if (!Util.IsRunAsAdmin())
+            {
+				// Relaunch as admin because this command requires admin privileges
+                Util.RelaunchAsAdmin(string.Format("--{0} --{1}",
+                                                   OptionConstants.Minimized, 
+                                                   shouldStart ? OptionConstants.StartService: OptionConstants.StopService));
+                startBtn.Enabled = true;
+                return;
+            }
 
             while (true)
             {
@@ -489,6 +601,15 @@ namespace iTuneServiceManager
 
             if (interruptingService)
             {
+                if (!Util.IsRunAsAdmin())
+                {
+                    // Relaunch as admin because this command requires admin privileges
+                    Util.RelaunchAsAdmin(string.Format("--{0} --{1}",
+                                                       OptionConstants.Minimized, OptionConstants.RunInteractive));
+                    startBtn.Enabled = true;
+                    return;
+                }
+
                 // Attempt to stop service
                 OnStartBtnClick(sender, e);
 
@@ -528,7 +649,7 @@ namespace iTuneServiceManager
                 _logger.Error(msg, ex);
                 MessageBox.Show(this, msg + "\n\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                RestartServiceOnProcessExit(this, EventArgs.Empty);
+                if (interruptingService) RestartServiceOnProcessExit(this, EventArgs.Empty);
             }
         }
 
