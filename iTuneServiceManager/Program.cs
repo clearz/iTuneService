@@ -77,7 +77,7 @@ namespace iTuneServiceManager
     }
     internal static class Program
     {
-        private static readonly log4net.ILog _logger;
+        private static readonly ILog _logger;
 
         static Program()
         {
@@ -85,13 +85,22 @@ namespace iTuneServiceManager
             GlobalContext.Properties["pid"] = Process.GetCurrentProcess().Id;
             GlobalContext.Properties["whichApp"] = "MGR";
 
-            _logger = log4net.LogManager.GetLogger(typeof(SingleInstanceController));
+            _logger = LogManager.GetLogger(typeof(SingleInstanceController));
         }
 
         [STAThread]
         private static void Main(string[] args)
         {
-            _logger.DebugFormat("Application entry. Command line has {0} arguments: \"{1}\"", args.Length, string.Join(" ", args));
+            var sanitizedArgs = args.ToList();
+            for (var i = 0; i < sanitizedArgs.Count - 1; i++)
+            {
+                if (sanitizedArgs[i].ToUpperInvariant() == "--" + OptionConstants.Password.ToUpperInvariant())
+                {
+                    sanitizedArgs[i + 1] = "<obfuscated>";
+                }
+            }
+            _logger.InfoFormat("iTuneServiceManager entry. Version={0}; Command line has {1} argument(s): \"{2}\"", 
+                               Application.ProductVersion, args.Length, string.Join(" ", sanitizedArgs));
 
             var options = GetCommandLineOptions(args);
             var controller = new SingleInstanceController(options);
